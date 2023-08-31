@@ -57,7 +57,7 @@ class SHM(): #metaclass=Singleton):
         with open('res/sensors.csv', 'r') as filet:
             sensor_number = 0
             for sensor in filet:
-                self.names_dict[sensor] = sensor_number
+                self.names_dict[sensor.strip()] = sensor_number
                 sensor_number += 1
 
     def __init__(self):
