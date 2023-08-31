@@ -1,9 +1,7 @@
-import math
 import time
 from mpu6050 import mpu6050
-import io
 import logging
-from lib.common import MQTT_CLIENT, SHM, READ_TRIGGER
+from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 
 class GIROSCOPES:

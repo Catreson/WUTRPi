@@ -54,20 +54,15 @@ class SHM(): #metaclass=Singleton):
     names_dict = defaultdict(lambda : 16)
 
     def fill_names_dict(self):
-        ind = 0
         with open('res/sensors.csv', 'r') as filet:
+            sensor_number = 0
             for sensor in filet:
-                self.names_dict[sensor] = ind
-                ind += 1
+                self.names_dict[sensor] = sensor_number
+                sensor_number += 1
 
     def __init__(self):
-        self.a = np.array([1.0] * len(self.sensor_list))
-        sensor_numbers = []
-        for ind in range(len(self.sensor_list)):
-            sensor_numbers.append(ind)
-        print(sensor_numbers)
-        for ind, name in zip(sensor_numbers, self.sensor_list):
-            self.names_dict[name] = ind
+        self.fill_names_dict()
+        self.a = np.array([1.0] * len(self.names_dict))
         print(self.names_dict)
         try:
             self.disp_shm = shared_memory.SharedMemory(create=True, size=self.a.nbytes, name='disp_shm')
