@@ -1,7 +1,7 @@
 import serial
 import binascii
 import time
-from .lib.common import SHM, MQTT_CLIENT
+from lib.common import SHM, MQTT_CLIENT
 from collections import defaultdict
 import logging
 

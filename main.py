@@ -5,7 +5,7 @@ from rs232 import ECU
 from susp import SUSPENSION
 from pyro import PYROMETERS
 from gyro import GIROSCOPES
-from .lib.common import READ_TRIGGER
+from lib.common import READ_TRIGGER
 
 pyro_list = [['pyro_fc', 0x5a],
   ['pyro_fr', 0x6a],

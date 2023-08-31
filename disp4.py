@@ -1,7 +1,7 @@
 import pygame
 import time
 import RPi.GPIO as GPIO
-from .lib.common import SHM, MQTT_CLIENT
+from lib.common import SHM, MQTT_CLIENT
 import logging
 import sys
 

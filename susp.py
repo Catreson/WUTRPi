@@ -1,8 +1,8 @@
 import sys
 import time
 import logging
-from .lib import ADS1263
-from .lib.common import MQTT_CLIENT, SHM, READ_TRIGGER
+from lib import ADS1263
+from lib.common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 
 class SUSPENSION():

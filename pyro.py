@@ -1,6 +1,6 @@
 import Adafruit_GPIO.I2C as I2C
 import time
-from .lib.common import MQTT_CLIENT, READ_TRIGGER
+from lib.common import MQTT_CLIENT, READ_TRIGGER
 import logging
 #I2C.require_repeated_start()
 import io
