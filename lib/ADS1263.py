@@ -27,7 +27,7 @@
 # THE SOFTWARE.
 #
 
-import config
+from lib import config
 import RPi.GPIO as GPIO
 
 # gain
