@@ -123,4 +123,6 @@ if __name__ == "__main__":
     mqtit = MQTT_CLIENT(client_id = 'someting', offline = 0)
     #mqtit.subscribe(topic = 'bike/correction/susp', func = print("mqtit"))
     print('Connected')
+
+    shim = SHM()
     
