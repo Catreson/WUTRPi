@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 logging.info(f'{nam} is alive')
             else:
                 logging.warning(f'{nam} is dead')
-                P.remove(proces)
+                P.remove((nam, proces))
                 p = Process(target = proces_dict[nam], name = nam)
                 p.start()
                 logging.warning(f'{nam} is ressurected')
