@@ -3,6 +3,7 @@ import time
 from common import SHM, MQTT_CLIENT
 import logging
 import sys
+import RPi.GPIO as GPIO
 
 pygame.init()
 
@@ -17,7 +18,7 @@ screen_mode = -1
 rpm_max = 12000
 rpm = 1350
 
-#offsets
+# offsets
 width1 = 800 / 4
 height1 = 420 / 3
 offtop = 100
@@ -26,21 +27,27 @@ offtop0 = 25
 off2 = 115
 height2 = 480 / 3
 
-#click counts
+# click counts
 fc_count = 0
 rc_count = 0
 
-#font setup
+# font setup
 cfont0 = (240, 240, 240)
 cfont1 = (0, 0, 0)
 rpm_col = (200, 200, 200)
 font1 = pygame.font.SysFont(None, 180)
 font2 = pygame.font.SysFont(None, 100)
 
-FPS = 4
+FPS = 10
 fpsClock = pygame.time.Clock()
 # end of display configuration -------------
 
+# GPIO config
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(23, GPIO.OUT)
+GPIO.setup(24, GPIO.OUT)
+# end GPIO config
 
 pygame.display.set_caption('Display')
 screen_background_0 = pygame.image.load("res/back_0.png").convert()
@@ -49,6 +56,12 @@ screen_loading = pygame.image.load("res/wut.png").convert()
 listen_topic = "bike/display/#"
 
 
+def display_gear(current_gear = 0):
+    GPIO.output(23, GPIO.HIGH)
+    GPIO.output(23, GPIO.LOW)
+    for i in range(current_gear):
+        GPIO.output(24, GPIO.HIGH)
+        GPIO.output(24, GPIO.LOW)
 
 def sec2min(sectime):
     fsectime = float(sectime)
@@ -209,4 +222,5 @@ while running:
 
     pygame.display.flip()
     fpsClock.tick(FPS)
+GPIO.cleanup()
 pygame.quit()
