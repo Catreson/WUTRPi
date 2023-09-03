@@ -49,6 +49,8 @@ GPIO.setup(23, GPIO.OUT)
 GPIO.setup(24, GPIO.OUT)
 # end GPIO config
 
+screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
+# screen = pygame.display.set_mode(display_resolution)
 pygame.display.set_caption('Display')
 screen_background_0 = pygame.image.load("res/back_0.png").convert()
 screen_background_1 = pygame.image.load("res/back_1.png").convert()
@@ -96,8 +98,7 @@ def on_message(client, userdata, message):
     print('mqtt')
 
 
-screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
-# screen = pygame.display.set_mode(display_resolution)
+
 cm = SHM()
 data1 = cm.read_bulk()
 
