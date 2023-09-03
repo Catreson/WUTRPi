@@ -161,13 +161,13 @@ while running:
     if screen_mode == -1:
         screen.blit(screen_background_0, (0, 0))
 
-        img = font1.render(str(round(data1[0])), True, cfont0)
+        img = font1.render(sec2min(laptime), True, cfont0)
         screen.blit(img, (off2, offtop0))
 
         img = font1.render(str(delta), True, cfont0)
         screen.blit(img, (off2, offtop0 + height2))
 
-        img = font1.render(sec2min(laptime), True, cfont0)
+        img = font1.render(str(round(data1[0])), True, cfont0)
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
         img = font2.render(str(round(data1[7], 2)), True, cfont0)
