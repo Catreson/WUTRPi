@@ -63,6 +63,7 @@ def display_gear(current_gear = 0):
         GPIO.output(24, GPIO.HIGH)
         GPIO.output(24, GPIO.LOW)
 
+
 def sec2min(sectime):
     fsectime = float(sectime)
     minutes = int(fsectime / 60)
@@ -155,6 +156,7 @@ while running:
                     if rc_count > 5:
                         mqtit.send('bike/correction/susp', 'susp_r')
                         rc_count = 0
+    display_gear(data1[13])
     if screen_mode == -1:
         screen.blit(screen_background_0, (0, 0))
 
