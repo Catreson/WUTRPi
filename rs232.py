@@ -92,6 +92,7 @@ class ECU():
             sensor = self.sensor_dict[kanal]
             calc = sensor[3](self, x = value)
             self.cm.save(name = sensor[1], var = calc)
+            prin(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
             self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
             if time.time() - self.succes_read > 10:
                 self.synchronize_read()
