@@ -6,7 +6,6 @@ import paho.mqtt.client as mqtt
 from collections import defaultdict
 import logging
 
-
 class Singleton(type):
 
     _instances = {}

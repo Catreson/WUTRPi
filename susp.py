@@ -9,8 +9,10 @@ class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
     corr_f = 0
     corr_r = 0
+    corr_sa = 0
+    corr_dict = {'susp_f': corr_f, 'susp_r': corr_r, 'steer_angle': corr_sa}
     channelList = [0, 1, 2, 3]
-    val = [0] * 2
+    val = [0] * 3
     write_topic = 'bike/sensor/susp/'
     listen_topic = 'bike/correction/susp'
     def correction(self, client, userdata, message):
@@ -24,23 +26,30 @@ class SUSPENSION():
                     self.corr_f = self.val[0]
                 if 'susp_r' in mesenge:
                     self.corr_r = self.val[1] - self.ANALOG_RANGE
+                if 'steer_angle' in mesenge:
+                    self.corr_sa = self.val[2]
             except:
                 print('err')
+        with open("res/correction.csv", "w") as file:
+            for kej in self.corr_dict.keys():
+                file.write(f'{kej},{self.corr_dict[kej]}\n')
         logging.info('Received correction message')
 
     def __init__(self, offline=0):
-        print('Init susp')
-        self.ADC = ADS1263.ADS1263()
 
+        logging.info('Init susp')
+        self.ADC = ADS1263.ADS1263()
         if self.ADC.ADS1263_init_ADC1('ADS1263_19200SPS') == -1:
             sys.exit('ADC failed to initialize')
         self.ADC.ADS1263_SetMode(0)  # 0 is singleChannel, 1 is diffChannel
-        print('ADC set')
+        logging.info('ADC set')
+
         try:
             self.cm = SHM()
         except:
             sys.exit('No shared memory access')
-        print('SHM set')
+        logging.info('SHM set')
+
         logging.info('Creating client')
         try:
             print('MQTT init')
@@ -52,6 +61,11 @@ class SUSPENSION():
             logging.info('Client connected')
         except:
             sys.exit('No connection to MQTT broker')
+        with open("res/correction.csv", "r") as file:
+            for line in file:
+                line = line.strip()
+                dat = line.split(',')
+                self.corr_dict[dat[0]] = float(dat[1])
 
     def ch_shock(self, potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
@@ -63,11 +77,12 @@ class SUSPENSION():
         ADC_Value = self.ADC.ADS1263_GetAll(self.channelList)
         self.val[0] = ADC_Value[0]
         self.val[1] = ADC_Value[1]
+        self.val[2] = ADC_Value[3]
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_f), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_r), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
         p_brake = self.potentiometer(analog_value=ADC_Value[2], potentiometer_length=200)
-        steer_angle = self.potentiometer(analog_value=ADC_Value[3], potentiometer_length=150)
+        steer_angle = self.potentiometer(analog_value=self.val[2] - self.corr_sa, potentiometer_length=150)
         self.cm.save('susp_f', susp_f)
         self.cm.save('susp_r', susp_r)
         self.cm.save('p_brake', p_brake)

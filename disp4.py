@@ -30,6 +30,7 @@ height2 = 480 / 3
 # click counts
 fc_count = 0
 rc_count = 0
+st_count = 0
 
 # font setup
 cfont0 = (240, 240, 240)
@@ -45,8 +46,7 @@ fpsClock = pygame.time.Clock()
 # GPIO config
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-GPIO.setup(23, GPIO.OUT)
-GPIO.setup(24, GPIO.OUT)
+
 # end GPIO config
 
 screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
@@ -56,14 +56,6 @@ screen_background_0 = pygame.image.load("res/back_0.png").convert()
 screen_background_1 = pygame.image.load("res/back_1.png").convert()
 screen_loading = pygame.image.load("res/wut.png").convert()
 listen_topic = "bike/display/#"
-
-
-def display_gear(current_gear = 0):
-    GPIO.output(23, GPIO.HIGH)
-    GPIO.output(23, GPIO.LOW)
-    for i in range(current_gear):
-        GPIO.output(24, GPIO.HIGH)
-        GPIO.output(24, GPIO.LOW)
 
 
 def sec2min(sectime):
