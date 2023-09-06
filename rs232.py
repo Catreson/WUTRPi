@@ -15,7 +15,7 @@ class ECU():
     def temp_water(self, x):
         self.succes_read = time.time()
         y= x/10 -100
-        if y > 120 or y < 5 or self.succes_read - self.last_temp > 10:
+        if y > 120 or y < 5:
             self.synchronize_read()
         self.last_temp = time.time()
         return y
@@ -92,7 +92,6 @@ class ECU():
             sensor = self.sensor_dict[kanal]
             calc = sensor[3](self, x = value)
             self.cm.save(name = sensor[1], var = calc)
-            self.mqtt.send(topic = self.write_topic, event = f'{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double')
             if time.time() - self.succes_read > 10:
                 self.synchronize_read()
             

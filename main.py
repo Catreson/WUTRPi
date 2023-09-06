@@ -22,7 +22,7 @@ def ECU_thread():
 def susp_thread():
     global offline
     susp = SUSPENSION(offline = offline) 
-    susp_trigger = READ_TRIGGER(frequency = 200, func = susp.read_data)
+    susp_trigger = READ_TRIGGER(frequency = 50, func = susp.read_data)
     
 def giro_thread():
     global offline
