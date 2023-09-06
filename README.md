@@ -1,5 +1,8 @@
 # WUTRPi
 Scripts for RPi used in WUT SiMR Racing Technology racing motorcycle, project is run on Warsaw University of Technology, SiMR faculty.
+Find us:\
+http://wsrt.pl
+
 Everything is prepared to work with SAS ESP, passing data by Mosquitto MQTT broker.
 
 Module name description:
