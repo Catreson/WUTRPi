@@ -16,7 +16,7 @@ offline = 0
 
 def ECU_thread():
     global offline
-    ecu = ECU(port = "/dev/ttyAMA1", baudrate = 19200, offline = offline)
+    ecu = ECU()
     ecu.reading_loop()
     
 def susp_thread():
