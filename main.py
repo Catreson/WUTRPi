@@ -37,10 +37,10 @@ def pyro_thread():
 
 
 proces_dict = {
-  'ecu_proc': ECU_thread,
-  'susp_proc': susp_thread,
-  'giro_proc': giro_thread,
-  'pyro_proc': pyro_thread}
+  'ecu_proc': ECU_thread}
+  #'susp_proc': susp_thread,
+  #'giro_proc': giro_thread,
+  #'pyro_proc': pyro_thread}
 
 if __name__ == "__main__":
     P = []
