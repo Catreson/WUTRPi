@@ -66,8 +66,7 @@ class ECU():
         except:
             sys.exit('No shared memory access')
         try:
-            self.mqtt = MQTT_CLIENT(client_id = 'suspension', offline = offline)
-            #self.mqtt.subscribe(self.listen_topic, correction)
+            self.mqtt = MQTT_CLIENT(client_id = 'ecuk', offline = offline)
         except:
             sys.exit('No connection to MQTT broker')
         self.fill_sensor_dict()
@@ -92,9 +91,9 @@ class ECU():
             sensor = self.sensor_dict[kanal]
             calc = sensor[3](self, x = value)
             self.cm.save(name = sensor[1], var = calc)
-            print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
+            #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
             self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
-            if time.time() - self.succes_read > 10:
+            if time.time() - self.succes_read > 3:
                 self.synchronize_read()
             
 if __name__ == "__main__":
