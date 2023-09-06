@@ -149,7 +149,7 @@ while running:
                     if rc_count > 5:
                         mqtit.send('bike/correction/susp', 'susp_r')
                         rc_count = 0
-    display_gear(int(data1[13]))
+
     if screen_mode == -1:
         screen.blit(screen_background_0, (0, 0))
 
