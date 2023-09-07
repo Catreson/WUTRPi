@@ -26,7 +26,7 @@ def susp_thread():
     
 def giro_thread():
     global offline
-    giro = GIROSCOPES(address = 0x68, bus = 1, offline = offline)
+    giro = GIROSCOPES(address = 0x69, bus = 1, offline = offline)
     giro_trigger = READ_TRIGGER(frequency = 10, func = giro.read_data)
     
 def pyro_thread():
