@@ -167,9 +167,9 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
 	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
-        //even = "gps," + std::to_string(mili()) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
+        even = "gps," + std::to_string(mili()) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
         //even = std::vformat("gps,{},{} {} {} {} 5,bike/sensor/gps,string", std::to_string(mili()), std::to_string(dms2dd(stod(msg[5]))), std::to_string(dms2dd(stod(msg[3]))), std::to_string(1.852 * std::stod(msg[7])), msg[8]);
-		even = std::format("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
+		//even = std::format("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
 		top.publish(std::move(even));
         }
     }
