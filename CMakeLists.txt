@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.9.1)
 project(SRTK)
 set(CMAKE_CXX_STANDARD 20)
-lpaho-mqttpp3
-lpaho-mqtt3as
 add_executable(srtk mqtt_rtcm.cpp)
 TARGET_LINK_LIBRARIES(srtk -lpaho-mqttpp3 -lpaho-mqtt3as)
