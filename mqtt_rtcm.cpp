@@ -155,48 +155,28 @@ double dms2dd(double dms){
 }
 
 void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
-    //std::ofstream output_file(FILENAME + std::to_string(timeStart) + ".csv", std::ios::app);
-    //float timer = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //float timer;
-    //timer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-    //timer = mili();
-    //output_file<<std::to_string(mili());
-    //output_file<<',';
-    //output_file.write((char*)ptr, len);
-    //output_file.close();
-
-    //std::ofstream output_file1("/home/catreson/dane_test/nmea_messages.csv", std::ios::app);
-    //float timer = std::chrono::duration_cast<std::chrono::duration<d>
-    //timer = std::chrono::duration_cast<std::chrono::milliseconds>(st>
-    //output_file1<<std::to_string(mili());
-    //output_file1<<',';
-    //output_file1.write((char*)ptr, len);
-    //output_file1.close();
-    //timer = 0;
     std::vector<std::string> msg;
     std::string str;
     std::string even;
     std::string inpt = convertToString((char*)ptr);
-    //std::cout<<inpt+"event \n";
     std::stringstream strim(convertToString((char*)ptr)); 
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
-    //std::cout<<msg[0]+"  "+msg[6]+"  "+msg[7]+"  "+msg[8]+"  \n";
-    if(msg[0] == "$GNRMC")
-	{
+        if(msg[0] == "$GNRMC")
+	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
         //even = "gps," + std::to_string(mili()) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
         //even = std::vformat("gps,{},{} {} {} {} 5,bike/sensor/gps,string", std::to_string(mili()), std::to_string(dms2dd(stod(msg[5]))), std::to_string(dms2dd(stod(msg[3]))), std::to_string(1.852 * std::stod(msg[7])), msg[8]);
-		even = std::vformat("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
+		even = std::format("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
 		top.publish(std::move(even));
         }
-        }
-        catch(std::exception exc)
-        {
+    }
+
+    catch(std::exception exc){
         std::cout<<"No mqtt\n";
-        }
+    }
         
 
 
