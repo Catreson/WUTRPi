@@ -71,6 +71,7 @@ class SHM(): #metaclass=Singleton):
             self.disp_shm = shared_memory.SharedMemory(name='disp_shm')
             resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
             self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+        print('SHM init complete')
 
     def save(self, name, var):
         self.b[self.names_dict[name]] = var
