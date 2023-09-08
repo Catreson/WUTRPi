@@ -53,7 +53,7 @@ class SHM(): #metaclass=Singleton):
     names_dict = defaultdict(lambda : 16)
 
     def fill_names_dict(self):
-        with open('res/sensors.csv', 'r') as filet:
+        with open('/home/catreson/res/sensors.csv', 'r') as filet:
             sensor_number = 0
             for sensor in filet:
                 self.names_dict[sensor.strip()] = sensor_number

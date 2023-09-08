@@ -54,9 +54,9 @@ GPIO.setwarnings(False)
 screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
 # screen = pygame.display.set_mode(display_resolution)
 pygame.display.set_caption('Display')
-#screen_background_0 = pygame.image.load("res/back_0.png").convert()
-#screen_background_1 = pygame.image.load("res/back_1.png").convert()
-#screen_loading = pygame.image.load("res/wut.png").convert()
+screen_background_0 = pygame.image.load("/home/catreson/res/back_0.png").convert()
+screen_background_1 = pygame.image.load("/home/catreson/res/back_1.png").convert()
+screen_loading = pygame.image.load("/home/catreson/res/wut.png").convert()
 listen_topic = "bike/display/#"
 
 
@@ -117,12 +117,12 @@ except:
 
 #loading screen
 for i in range(40):
-    #screen_loading.set_alpha(i)
-    #screen.blit(screen_loading, (0, 78))
+    screen_loading.set_alpha(i)
+    screen.blit(screen_loading, (0, 78))
     pygame.display.flip()
     time.sleep(0.05)
 time.sleep(1)
-#screen.blit(screen_background_0, (0, 0))
+screen.blit(screen_background_0, (0, 0))
 pygame.display.flip()
 
 running = True
@@ -153,7 +153,7 @@ while running:
                         rc_count = 0
 
     if screen_mode == -1:
-        #screen.blit(screen_background_0, (0, 0))
+        screen.blit(screen_background_0, (0, 0))
 
         img = font1.render(sec2min(laptime), True, cfont0)
         screen.blit(img, (off2, offtop0))
@@ -176,7 +176,7 @@ while running:
             del pixels
 
     if screen_mode == 1:
-        #screen.blit(screen_background_1, (0, 0))
+        screen.blit(screen_background_1, (0, 0))
 
         img = font2.render(str(int(data1[0])), True, cfont1)
         screen.blit(img, (off1, offtop + off1))
