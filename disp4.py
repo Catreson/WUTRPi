@@ -7,6 +7,7 @@ import sys
 import RPi.GPIO as GPIO
 
 os.environ["DISPLAY"] = ":0"
+os.putenv('SDL_VIDEODRIVER', 'fbcon')
 pygame.init()
 
 laptime = 0.0
