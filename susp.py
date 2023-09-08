@@ -10,9 +10,10 @@ class SUSPENSION():
     corr_f = 0
     corr_r = 0
     corr_sa = 0
-    corr_dict = {'susp_f': corr_f, 'susp_r': corr_r, 'steer_angle': corr_sa}
+    corr_pb = 0
+    corr_dict = {'susp_f': corr_f, 'susp_r': corr_r, 'p_brake': corr_pb, 'steer_angle': corr_sa}
     channelList = [0, 1, 2, 3]
-    val = [0] * 3
+    val = [0] * 4
     write_topic = 'bike/sensor/susp/'
     listen_topic = 'bike/correction/susp'
     def correction(self, client, userdata, message):
@@ -24,10 +25,12 @@ class SUSPENSION():
             try:
                 if 'susp_f' in mesenge:
                     self.corr_f = self.val[0]
-                if 'susp_r' in mesenge:
+                elif 'susp_r' in mesenge:
                     self.corr_r = self.val[1] - self.ANALOG_RANGE
-                if 'steer_angle' in mesenge:
-                    self.corr_sa = self.val[2]
+                elif 'p_brake' in mesenge:
+                    self.corr_pb = self.val[2]
+                elif 'steer_angle' in mesenge:
+                    self.corr_sa = self.val[3]
             except:
                 print('err')
         with open("res/correction.csv", "w") as file:
