@@ -54,9 +54,9 @@ GPIO.setwarnings(False)
 screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
 # screen = pygame.display.set_mode(display_resolution)
 pygame.display.set_caption('Display')
-screen_background_0 = pygame.image.load("/home/catreson/res/back_0.png").convert()
-screen_background_1 = pygame.image.load("/home/catreson/res/back_1.png").convert()
-screen_loading = pygame.image.load("/home/catreson/res/wut.png").convert()
+screen_background_0 = pygame.image.load("/home/catreson/WUTRPi/res/back_0.png").convert()
+screen_background_1 = pygame.image.load("/home/catreson/WUTRPi/res/back_1.png").convert()
+screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
 listen_topic = "bike/display/#"
 
 
