@@ -6,7 +6,6 @@ import logging
 import sys
 import RPi.GPIO as GPIO
 
-#os.environ["DISPLAY"] = ":0"
 pygame.init()
 
 laptime = 0.0
@@ -107,15 +106,11 @@ try:
 except:
     sys.exit('No connection to MQTT broker')
 
-
-
 #GPIO.setmode(GPIO.BCM)
 #GPIO.setwarnings(False)
 #GPIO.setup(21, GPIO.OUT)
 
-
-
-#loading screen
+# loading screen
 for i in range(40):
     screen_loading.set_alpha(i)
     screen.blit(screen_loading, (0, 78))

@@ -33,7 +33,7 @@ class SUSPENSION():
                     self.corr_sa = self.val[3]
             except:
                 print('err')
-        with open("res/correction.csv", "w") as file:
+        with open("/home/catreson/WUTRPi/res/correction.csv", "w") as file:
             for kej in self.corr_dict.keys():
                 file.write(f'{kej},{self.corr_dict[kej]}\n')
         logging.info('Received correction message')
@@ -64,7 +64,7 @@ class SUSPENSION():
             logging.info('Client connected')
         except:
             sys.exit('No connection to MQTT broker')
-        with open("res/correction.csv", "r") as file:
+        with open("/home/catreson/WUTRPi/res/correction.csv", "r") as file:
             for line in file:
                 line = line.strip()
                 dat = line.split(',')
