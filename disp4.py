@@ -177,7 +177,7 @@ while running:
         img = font1.render(str(round(data1[0])), True, cfont0)
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
-        img = font2.render(str(round(data1[7], 2)), True, cfont0)
+        img = font2.render("%.2f" %data1[7], True, cfont0)
         screen.blit(img, (off1 + 610, offtop0 + 80))
 
         img = font2.render(str(data1[4]), True, cfont0)
@@ -194,7 +194,7 @@ while running:
         img = font2.render(str(int(data1[0])), True, cfont1)
         screen.blit(img, (off1, offtop + off1))
 
-        img = font2.render("%.2f" % data1[16], True, cfont1)
+        img = font2.render("%.1f" % data1[16], True, cfont1)
         screen.blit(img, (off1, offtop + off1 + height1))
 
         img = font2.render(str(data1[10]), True, cfont1)
@@ -219,10 +219,10 @@ while running:
         img = font2.render("%.1f" % data1[6], True, cfont1)
         screen.blit(img, (off1 + 2 * width1, offtop + off1 + 2 * height1))
 
-        img = font2.render("%.2f" % data1[3], True, cfont1)
+        img = font2.render("%.1f" % data1[3], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1))
 
-        img = font2.render(str(data1[7]), True, cfont1)
+        img = font2.render("%.2f" %data1[7], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1 + height1))
 
         img = font2.render("%.1f" % data1[11], True, cfont1)
