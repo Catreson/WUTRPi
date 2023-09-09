@@ -27,6 +27,7 @@ class SUSPENSION():
                 if 'susp_f' in mesenge:
                     self.corr_f = self.val[0]
                     print(self.corr_f)
+                    print(self.corr_dict['susp_f'])
                 elif 'susp_r' in mesenge:
                     self.corr_r = self.val[1] - self.ANALOG_RANGE
                 elif 'p_brake' in mesenge:
