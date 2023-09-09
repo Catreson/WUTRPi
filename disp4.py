@@ -137,28 +137,33 @@ while running:
                 screen_mode = screen_mode * (-1)
             if screen_mode == -1 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                 inversion = inversion * (-1)
-            if screen_mode == 1 and 400 < finger[0] < 600:
-                if 30 < finger[1] < 180:
-                    fc_count = fc_count + 1
-                    if fc_count > 5:
-                        mqtit.send('bike/correction/susp', 'susp_f')
-                        fc_count = 0
-                if 330 < finger[1] < 480:
-                    rc_count = rc_count + 1
-                    if rc_count > 5:
-                        mqtit.send('bike/correction/susp', 'susp_r')
-                        rc_count = 0
-                if 180 < finger[1] < 330:
-                    st_count = st_count + 1
-                    if st_count > 5:
-                        mqtit.send('bike/correction/susp', 'steer_angle')
-                        st_count = 0
-            if screen_mode == 1 and 600 < finger[0]:
-                if 330 < finger[1] < 480:
-                    pb_count = pb_count + 1
-                    if pb_count > 5:
-                        mqtit.send('bike/correction/susp', 'p_brake')
-                        pb_count = 0
+            if screen_mode == 1:
+                if finger[0] < 200:
+                        if 180 < finger[1] < 330:
+                            st_count = st_count + 1
+                            if st_count > 5:
+                                mqtit.send('bike/correction/susp', 'steer_angle')
+                                st_count = 0
+
+                if 400 < finger[0] < 600:
+                    if 30 < finger[1] < 180:
+                        fc_count = fc_count + 1
+                        if fc_count > 5:
+                            mqtit.send('bike/correction/susp', 'susp_f')
+                            fc_count = 0
+
+                    if 330 < finger[1] < 480:
+                        rc_count = rc_count + 1
+                        if rc_count > 5:
+                            mqtit.send('bike/correction/susp', 'susp_r')
+                            rc_count = 0
+
+                if 600 < finger[0]:
+                    if 330 < finger[1] < 480:
+                        pb_count = pb_count + 1
+                        if pb_count > 5:
+                            mqtit.send('bike/correction/susp', 'p_brake')
+                            pb_count = 0
 
     if screen_mode == -1:
         screen.blit(screen_background_0, (0, 0))
@@ -189,10 +194,10 @@ while running:
         img = font2.render(str(int(data1[0])), True, cfont1)
         screen.blit(img, (off1, offtop + off1))
 
-        img = font2.render(str(data1[10]), True, cfont1)
+        img = font2.render(str(data1[16]), True, cfont1)
         screen.blit(img, (off1, offtop + off1 + height1))
 
-        img = font2.render(str(data1[8]), True, cfont1)
+        img = font2.render(str(data1[10]), True, cfont1)
         screen.blit(img, (off1, offtop + off1 + 2 * height1))
 
         img = font2.render(str(data1[1]), True, cfont1)
