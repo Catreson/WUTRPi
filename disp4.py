@@ -33,6 +33,7 @@ height2 = 480 / 3
 fc_count = 0
 rc_count = 0
 st_count = 0
+pb_count = 0
 
 # font setup
 cfont0 = (240, 240, 240)
@@ -147,6 +148,17 @@ while running:
                     if rc_count > 5:
                         mqtit.send('bike/correction/susp', 'susp_r')
                         rc_count = 0
+                if 180 < finger[1] < 330:
+                    st_count = st_count + 1
+                    if st_count > 5:
+                        mqtit.send('bike/correction/susp', 'steer_angle')
+                        st_count = 0
+            if screen_mode == 1 and 600 < finger[0]:
+                if 330 < finger[1] < 480:
+                    pb_count = pb_count + 1
+                    if pb_count > 5:
+                        mqtit.send('bike/correction/susp', 'p_brake')
+                        pb_count = 0
 
     if screen_mode == -1:
         screen.blit(screen_background_0, (0, 0))

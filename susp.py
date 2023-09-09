@@ -7,10 +7,6 @@ from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
-    corr_f = 0
-    corr_r = 0
-    corr_sa = 0
-    corr_pb = 0
     corr_dict = {}
     channelList = [0, 1, 2, 3]
     val = [0] * 4
