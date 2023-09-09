@@ -72,7 +72,8 @@ class SUSPENSION():
             for line in file:
                 line = line.strip()
                 dat = line.split(',')
-                self.corr_dict[dat[0]] = float(dat[1])
+                tmp = self.corr_dict[dat[0]]
+                tmp = float(dat[1])
 
     def ch_shock(self, potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
