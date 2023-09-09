@@ -80,8 +80,8 @@ class SUSPENSION():
         return potentiometer_length * analog_value / self.ANALOG_RANGE
 
     def read_data(self):
-        ADC_Value = self.ADC.ADS1263_GetAll(self.channelList)
-        self.val = ADC_Value
+        self.val = self.ADC.ADS1263_GetAll(self.channelList)
+        print(self.val)
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_f), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_r), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
