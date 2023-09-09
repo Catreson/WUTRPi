@@ -72,20 +72,20 @@ class SUSPENSION():
 
     def ch_shock(self, potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
-
+    def ch_steer(self, potentiometer_length):
+        return -0.0006 * pow(potentiometer_length, 2) - 0.4231 * potentiometer_length + -0.0026
     def potentiometer(self, analog_value, potentiometer_length):
         return potentiometer_length * analog_value / self.ANALOG_RANGE
 
     def read_data(self):
         ADC_Value = self.ADC.ADS1263_GetAll(self.channelList)
-        self.val[0] = ADC_Value[0]
-        self.val[1] = ADC_Value[1]
-        self.val[2] = ADC_Value[3]
+        self.val = ADC_Value
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_f), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_r), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
-        p_brake = self.potentiometer(analog_value=ADC_Value[2], potentiometer_length=200)
-        steer_angle = self.potentiometer(analog_value=self.val[2] - self.corr_sa, potentiometer_length=150)
+        p_brake = self.potentiometer(analog_value=self.val[2] - self.corr_pb, potentiometer_length=227)
+        pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_sa, potentiometer_length=150)
+        steer_angle = self.ch_steer(pot_sa)
         self.cm.save('susp_f', susp_f)
         self.cm.save('susp_r', susp_r)
         self.cm.save('p_brake', p_brake)
