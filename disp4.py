@@ -194,7 +194,7 @@ while running:
         img = font2.render(str(int(data1[0])), True, cfont1)
         screen.blit(img, (off1, offtop + off1))
 
-        img = font2.render(str(data1[16]), True, cfont1)
+        img = font2.render("%.2f" % data1[16], True, cfont1)
         screen.blit(img, (off1, offtop + off1 + height1))
 
         img = font2.render(str(data1[10]), True, cfont1)
@@ -210,22 +210,22 @@ while running:
         screen.blit(img, (off1 + width1, offtop + off1 + 2 * height1))
 
         # susp_f
-        img = font2.render(str(round(data1[2])), True, cfont1)
+        img = font2.render("%.1f" % data1[2], True, cfont1)
         screen.blit(img, (off1 + 2 * width1, offtop + off1))
 
         img = font2.render(str(data1[4]), True, cfont1)
         screen.blit(img, (off1 + 2 * width1, offtop + off1 + height1))
 
-        img = font2.render(str(round(data1[6])), True, cfont1)
+        img = font2.render("%.1f" % data1[6], True, cfont1)
         screen.blit(img, (off1 + 2 * width1, offtop + off1 + 2 * height1))
 
-        img = font2.render(str(round(data1[3], 2)), True, cfont1)
+        img = font2.render("%.2f" % data1[3], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1))
 
         img = font2.render(str(data1[7]), True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1 + height1))
 
-        img = font2.render(str(round(data1[11], 1)), True, cfont1)
+        img = font2.render("%.1f" % data1[11], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1 + 2 * height1))
 
         pygame.draw.rect(screen, rpm_col, pygame.Rect(0, 0, data1[0] / rpm_max * 800, 60))
