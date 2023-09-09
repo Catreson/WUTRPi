@@ -102,4 +102,4 @@ class SUSPENSION():
 
 if __name__ == "__main__":
     susp = SUSPENSION(offline=1)
-    trigger = READ_TRIGGER(0.005, susp.read_data)
+    trigger = READ_TRIGGER(1, susp.read_data)
