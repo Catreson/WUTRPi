@@ -16,6 +16,7 @@ class SUSPENSION():
     val = [0] * 4
     write_topic = 'bike/sensor/susp/'
     listen_topic = 'bike/correction/susp'
+
     def correction(self, client, userdata, message):
         mesenge = str(message.payload.decode("utf-8"))
         print("message received ", mesenge)
@@ -33,9 +34,10 @@ class SUSPENSION():
                     self.corr_sa = self.val[3]
             except:
                 print('err')
-        with open("/home/catreson/WUTRPi/res/correction.csv", "w") as file:
-            for kej in self.corr_dict.keys():
-                file.write(f'{kej},{self.corr_dict[kej]}\n')
+            with open("/home/catreson/WUTRPi/res/correction.csv", "w") as file:
+                for kej in self.corr_dict.keys():
+                    print(f'{kej},{self.corr_dict[kej]}\n')
+                    file.write(f'{kej},{self.corr_dict[kej]}\n')
         logging.info('Received correction message')
 
     def __init__(self, offline=0):
