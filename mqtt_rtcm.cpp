@@ -174,7 +174,8 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
         }
     }
 
-    catch(std::exception exc){
+    catch(std::exception &exc){
+        std::cerr << exc.what();
         std::cout<<"No mqtt\n";
     }
         
