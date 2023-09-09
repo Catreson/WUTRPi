@@ -11,7 +11,7 @@ class SUSPENSION():
     corr_r = 0
     corr_sa = 0
     corr_pb = 0
-    corr_dict = {'susp_f': corr_f, 'susp_r': corr_r, 'p_brake': corr_pb, 'steer_angle': corr_sa}
+    corr_dict = {}
     channelList = [0, 1, 2, 3]
     val = [0] * 4
     write_topic = 'bike/sensor/susp/'
@@ -25,15 +25,13 @@ class SUSPENSION():
         if message.topic == 'bike/correction/susp':
             try:
                 if 'susp_f' in mesenge:
-                    self.corr_f = self.val[0]
-                    print(self.corr_f)
-                    print(self.corr_dict['susp_f'])
+                    self.corr_dict['susp_f'] = self.val[0]
                 elif 'susp_r' in mesenge:
-                    self.corr_r = self.val[1] - self.ANALOG_RANGE
+                    self.corr_dict['susp_r'] = self.val[1] - self.ANALOG_RANGE
                 elif 'p_brake' in mesenge:
-                    self.corr_pb = self.val[2]
+                    self.corr_dict['p_brake'] = self.val[2]
                 elif 'steer_angle' in mesenge:
-                    self.corr_sa = self.val[3]
+                    self.corr_dict['steer_angle'] = self.val[3]
             except:
                 print('err')
             with open("/home/catreson/WUTRPi/res/correction.csv", "w") as file:
