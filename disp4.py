@@ -222,7 +222,7 @@ while running:
         img = font2.render("%.1f" % data1[3], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1))
 
-        img = font2.render("%.2f" %data1[7], True, cfont1)
+        img = font2.render("%.2f" % data1[7], True, cfont1)
         screen.blit(img, (off1 + 3 * width1, offtop + off1 + height1))
 
         img = font2.render("%.1f" % data1[11], True, cfont1)
