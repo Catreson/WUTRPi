@@ -9,7 +9,10 @@ from common import READ_TRIGGER
 
 pyro_list = [['pyro_fc', 0x5a],
   ['pyro_fr', 0x6a],
-  ['pyro_fl', 0x7a]]
+  ['pyro_fl', 0x7a],
+  ['pyro_rc', 0x4c],
+  ['pyro_rr', 0x6c],
+  ['pyry_rl', 0x5c]]
 
   
 offline = 0
