@@ -57,7 +57,7 @@ while 1:
         GPIO.output(20, GPIO.HIGH)
         GPIO.output(16, GPIO.HIGH)
         GPIO.output(12, GPIO.HIGH)
-    elif rpm > led_flash:
+    elif rev_limiter > rpm:
         if flash == 0:
             GPIO.output(21, GPIO.HIGH)
             GPIO.output(20, GPIO.HIGH)
