@@ -266,7 +266,7 @@ int setup() {
 void fill_timestamp()
 {
     std::ifstream file ("/home/catreson/skrypty/timestamp.txt");
-    if (myfile.is_open())
+    if (file.is_open())
     {
     std::string line;
     std::getline(file,line);
