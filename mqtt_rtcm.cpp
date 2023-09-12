@@ -279,6 +279,7 @@ void fill_timestamp()
 
 int main() {
     int i2cHandle = setup();
+    fill_timestamp();
     timeStart = millis();
     mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
     mqtt::topic top(cli, TOPIC, QOS, true);
