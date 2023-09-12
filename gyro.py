@@ -29,13 +29,12 @@ class GIROSCOPES:
     def read_data(self):
         accel_data = self.gyro.get_accel_data()
         gyro_data = self.gyro.get_gyro_data()
-        timer = time.time()
-        self.mqtt.send(topic = self.write_topic, event = f"acc_x,{timer},{accel_data['x']},bike/sensor/imu,double")
-        self.mqtt.send(topic = self.write_topic, event = f"acc_y,{timer},{accel_data['y']},bike/sensor/imu,double")
-        self.mqtt.send(topic = self.write_topic, event = f"acc_z,{timer},{accel_data['z']},bike/sensor/imu,double")
-        self.mqtt.send(topic = self.write_topic, event = f"gyro_x,{timer},{gyro_data['x']},bike/sensor/imu,double")
-        self.mqtt.send(topic = self.write_topic, event = f"gyro_y,{timer},{gyro_data['y']},bike/sensor/imu,double")
-        self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{timer},{gyro_data['z']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"acc_x,{time.time() - self.mqtt.timestam},{accel_data['x']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"acc_y,{time.time() - self.mqtt.timestam},{accel_data['y']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"acc_z,{time.time() - self.mqtt.timestam},{accel_data['z']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"gyro_x,{time.time() - self.mqtt.timestam},{gyro_data['x']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"gyro_y,{time.time() - self.mqtt.timestam},{gyro_data['y']},bike/sensor/imu,double")
+        self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{time.time() - self.mqtt.timestam},{gyro_data['z']},bike/sensor/imu,double")
        
 if __name__ == "__main__":
     giro = GIROSCOPES(bus = 1)

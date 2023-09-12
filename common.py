@@ -83,7 +83,8 @@ class SHM(): #metaclass=Singleton):
         return self.b[:]
 
 class MQTT_CLIENT():
-    
+
+    timestam = 0
     def send_mqtt(self, topic, event):
         self.client.publish(topic, event)
     
@@ -100,7 +101,13 @@ class MQTT_CLIENT():
         self.client.connect('localhost')
         logging.info('Connceted to localhost')
         self.is_offline = offline
-        self.offline_file = SAVE_CSV()
+        if offline == 1:
+            self.offline_file = SAVE_CSV()
+        with open('/home/catreson/skrypty/timestamp.txt','r') as filet:
+            tmp = filet.readline()
+            tmp.strip()
+            self.timestam = float(tmp)
+
         
     def send(self, topic, event):
         self.save_mode[self.is_offline](self, topic = topic, event = event)

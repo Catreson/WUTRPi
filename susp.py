@@ -88,7 +88,7 @@ class SUSPENSION():
         self.cm.save('susp_r', susp_r)
         self.cm.save('p_brake', p_brake)
         self.cm.save('steer_angle', steer_angle)
-        even = f'susp,{time.time()},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
+        even = f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
         self.mqtit.send(topic=self.write_topic, event=even)
 
     def __del__(self):
