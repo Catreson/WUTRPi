@@ -13,7 +13,9 @@ laptime = 0.0
 delta = 0.0
 lapno = 0
 rtk_flag = (255, 0, 0)
-engine_mode = "PL"
+engine_mode = "P"
+
+engine_mode_dict = { 'P' : (240, 240, 0), 'L' : (0, 240, 0), 'A' : (240, 0, 0)}
 
 # display configuration -------------------
 display_resolution = [800, 480]
@@ -193,7 +195,7 @@ while running:
         img = font3.render("RTK", True, rtk_flag) # rtk indicator
         screen.blit(img, (off1 + 665, offtop0 - 10))
 
-        img = font1.render(engine_mode, True, cfont0)
+        img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
         screen.blit(img, (off1 + 665, offtop0 + 80))
 
         img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
