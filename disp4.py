@@ -29,7 +29,7 @@ offtop = 100
 off1 = 15
 offtop0 = 25
 off2 = 115
-height2 = 480 / 3
+height2 = int(480 / 3)
 
 # click counts
 fc_count = 0
