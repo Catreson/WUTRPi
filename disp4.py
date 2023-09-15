@@ -43,6 +43,7 @@ pb_count = 0
 cfont0 = (240, 240, 240)
 cfont1 = (0, 0, 0)
 rpm_col = (200, 200, 200)
+font0 = pygame.font.SysFont(None, 360)
 font1 = pygame.font.SysFont(None, 180)
 font2 = pygame.font.SysFont(None, 100)
 font3 = pygame.font.SysFont(None, 60)
@@ -217,7 +218,7 @@ while running:
     if abs(screen_mode) == 2:
         screen.blit(screen_background_2, (0, 0))
 
-        img = font1.render(sec2min(laptime), True, cfont0)
+        img = font0.render("%.1f" %data1[12], True, cfont0)
         screen.blit(img, (off2 + 80, offtop0 + 80))
 
         img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
