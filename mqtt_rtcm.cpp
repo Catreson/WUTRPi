@@ -320,19 +320,6 @@ int main() {
     int i2cHandle = setup();
     fill_timestamp();
     timeStart = millis();
-    /*mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
-    mqtt::topic top(cli, TOPIC, QOS, true);
-    try{
-        cli.connect()->wait();
-    }
-    catch(std::exception){
-        std::cerr<<"No client";
-    }
-
-    while (true) {
-        readNMEA(i2cHandle, top);
-        readRTCM(i2cHandle);
-    }*/
     std::thread th2(readRTCM, i2cHandle);
     std::thread th1(readNMEA, i2cHandle);
     th1.join();
