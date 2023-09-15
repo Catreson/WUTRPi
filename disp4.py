@@ -180,7 +180,7 @@ while running:
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
         img = font3.render("%.2f" %data1[7], True, cfont0)
-        screen.blit(img, (off1 + 610, offtop0 + 120))
+        screen.blit(img, (off1 + 610, offtop0 + 240))
 
         img = font2.render(str(data1[4]), True, cfont0)
         screen.blit(img, (off1 + 645, offtop0 + 2 * height2 + 20))
