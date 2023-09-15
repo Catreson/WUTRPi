@@ -194,7 +194,7 @@ while running:
         screen.blit(img, (off1 + 665, offtop0 - 10))
 
         img = font1.render(engine_mode, True, cfont0)
-        screen.blit(img, (off1 + 665, offtop0 + 120))
+        screen.blit(img, (off1 + 665, offtop0 + 80))
 
         img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
         screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
