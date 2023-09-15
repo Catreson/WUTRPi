@@ -227,7 +227,7 @@ void i2cWrite(const std::vector<uint8_t> data, int i2cHandle) {
 }
 
 void readRTCM(int i2cHandle) {
-    while(true){
+    //while(true){
     std::vector<uint8_t> rtcm_bytes;
     char rtcm_byte;
     if (std::cin.get(rtcm_byte) && rtcm_byte == RTCM3_PREAMBLE) {
@@ -238,7 +238,7 @@ void readRTCM(int i2cHandle) {
             rtcm_bytes.push_back(reinterpret_cast<uint8_t&>(c));
         }
         i2cWrite(rtcm_bytes, i2cHandle);
-    }
+    //}
     }
 }
 
@@ -267,6 +267,7 @@ void readNMEA(int i2cHandle) {
         double stamp = mili() - timestamp;
         write_to_file(received_bytes, i+1, top, stamp);
     }
+    readRTCM(i2cHandle);
     }
 }
 
@@ -313,7 +314,7 @@ int main() {
         readNMEA(i2cHandle, top);
         readRTCM(i2cHandle);
     }*/
-    std::thread th2(readRTCM, i2cHandle);
+    //std::thread th2(readRTCM, i2cHandle);
     std::thread th1(readNMEA, i2cHandle);
     th1.join();
     close(i2cHandle);
