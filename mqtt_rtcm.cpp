@@ -171,7 +171,7 @@ double dms2dd(double dms){
     return deg+min/100;
 }
 
-void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
+void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top, double stamp) {
     std::vector<std::string> msg;
     std::string str;
     std::string even;
@@ -184,7 +184,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
 	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
-        even = "gps," + std::to_string(mili() - timestamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
+        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
 		top.publish(std::move(even));
         }
     }
@@ -244,7 +244,8 @@ void readNMEA(int i2cHandle, mqtt::topic& top) {
             i++;
         }
         received_bytes[i] = ENDLINE;
-        write_to_file(received_bytes, i+1, top);
+        double stamp = mili() - timestamp;
+        write_to_file(received_bytes, i+1, top, stamp);
     }
 }
 
