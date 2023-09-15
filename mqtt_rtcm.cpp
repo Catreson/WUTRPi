@@ -234,7 +234,16 @@ void readRTCM(int i2cHandle) {
     }
 }
 
-void readNMEA(int i2cHandle, mqtt::topic& top) {
+void readNMEA(int i2cHandle) {
+
+    mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
+    mqtt::topic top(cli, TOPIC, QOS, true);
+    try{
+        cli.connect()->wait();
+    }
+    catch(std::exception){
+        std::cerr<<"No client";
+    }
     while(true){
     uint8_t received_bytes[92] = {'$'};
     uint8_t received_byte;
@@ -283,7 +292,7 @@ int main() {
     int i2cHandle = setup();
     fill_timestamp();
     timeStart = millis();
-    mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
+    /*mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
     mqtt::topic top(cli, TOPIC, QOS, true);
     try{
         cli.connect()->wait();
@@ -291,12 +300,12 @@ int main() {
     catch(std::exception){
         std::cerr<<"No client";
     }
-    /*
+
     while (true) {
         readNMEA(i2cHandle, top);
         readRTCM(i2cHandle);
     }*/
-    std::thread th1(readNMEA, i2cHandle, top);
+    std::thread th1(readNMEA, i2cHandle);
     std::thread th2(readRTCM, i2cHandle);
     th1.join();
     close(i2cHandle);
