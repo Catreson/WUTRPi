@@ -313,8 +313,8 @@ int main() {
         readNMEA(i2cHandle, top);
         readRTCM(i2cHandle);
     }*/
-    std::thread th1(readNMEA, i2cHandle);
     std::thread th2(readRTCM, i2cHandle);
+    std::thread th1(readNMEA, i2cHandle);
     th1.join();
     close(i2cHandle);
     return 0;
