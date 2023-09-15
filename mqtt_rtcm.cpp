@@ -20,7 +20,7 @@
 float timestamp;
 long timeStart;
 double hdop = 0;
-std::string rtk_flags = "DDDDDD";
+int rtk_flag = 0;
 
 const std::string DFLT_ADDRESS { "localhost:1883" };
 const std::string TOPIC { "bike/sensor/gps" };
@@ -196,7 +196,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
 	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
-        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] + " " + std::to_string(hdop) + " " + rtk_flags + ",bike/sensor/gps,string";
+        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] + " " + std::to_string(hdop) + " " + std::to_string(rtk_flag) + ",bike/sensor/gps,string";
 		top1.publish(std::move(even));
         }
         if(msg[0] == "$GNGNS")
@@ -205,11 +205,11 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
             hdop = 0;
         else{
             hdop = std::stod(msg[8]);
-            rtk_flags = msg[6];
+            rtk_flag = msg[6] != "" ? (msg[6][0] == "F" ? 1 : 0): rtk_flag;
             disp_counter++;
-            if(disp_counter > 50)
+            if(disp_counter > 100)
             {
-                top2.publish(std::move(rtk_flags));
+                top2.publish(std::move(std::to_string(rtk_flags)));
                 disp_counter = 0;
             }
         }
