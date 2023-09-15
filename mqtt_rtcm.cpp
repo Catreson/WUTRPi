@@ -16,7 +16,6 @@
 #define RTCM3_PREAMBLE 0xD3
 #define NMEA_PREAMBLE 0x24
 #define ENDLINE 0x0A
-#define FILENAME "/home/catreson/dane_test/nmea_messages"
 
 float timestamp;
 long timeStart;
@@ -161,7 +160,7 @@ volatile double mili()
 {
     double fractional_seconds_since_epoch
     = std::chrono::duration_cast<std::chrono::duration<double>>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     return fractional_seconds_since_epoch;
 }
 
@@ -186,8 +185,6 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
         even = "gps," + std::to_string(mili() - timestamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
-        //even = std::vformat("gps,{},{} {} {} {} 5,bike/sensor/gps,string", std::to_string(mili()), std::to_string(dms2dd(stod(msg[5]))), std::to_string(dms2dd(stod(msg[3]))), std::to_string(1.852 * std::stod(msg[7])), msg[8]);
-		//even = std::format("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
 		top.publish(std::move(even));
         }
     }
