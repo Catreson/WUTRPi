@@ -19,9 +19,12 @@
 
 float timestamp;
 long timeStart;
+double hdop = 0;
+std::string rtk_flags = "DDDDDD";
 
 const std::string DFLT_ADDRESS { "localhost:1883" };
 const std::string TOPIC { "bike/sensor/gps" };
+const std::string TOPIC2 { "bike/display/rtk" };
 const std::string CLIENT_ID { "gipies" };
 const int QOS = 0;
 
@@ -178,7 +181,8 @@ double dms2dd(double dms){
     return deg+min/100;
 }
 
-void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top, double stamp) {
+void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top2, double stamp) {
+    static int disp_counter = 0;
     std::vector<std::string> msg;
     std::string str;
     std::string even;
@@ -192,8 +196,23 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top, double stamp) {
 	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
-        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
-		top.publish(std::move(even));
+        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] + " " + std::to_string(hdop) + " " + rtk_flags + ",bike/sensor/gps,string";
+		top1.publish(std::move(even));
+        }
+        if(msg[0] == "$GNGNS")
+	    {
+        if(msg[8] == "")
+            hdop = 0;
+        else{
+            hdop = std::stod(msg[8]);
+            rtk_flags = msg[6];
+            disp_counter++;
+            if(disp_counter > 50)
+            {
+                top2.publish(std::move(rtk_flags));
+                disp_counter = 0;
+            }
+        }
         }
     }
 
@@ -245,7 +264,8 @@ void readRTCM(int i2cHandle) {
 void readNMEA(int i2cHandle) {
 
     mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
-    mqtt::topic top(cli, TOPIC, QOS, true);
+    mqtt::topic top1(cli, TOPIC, QOS, true);
+    mqtt::topic top2(cli, TOPIC2, QOS, true);
     try{
         cli.connect()->wait();
     }
@@ -265,7 +285,7 @@ void readNMEA(int i2cHandle) {
         }
         received_bytes[i] = ENDLINE;
         double stamp = mili() - timestamp;
-        write_to_file(received_bytes, i+1, top, stamp);
+        write_to_file(received_bytes, i+1, top1, top2, stamp);
     }
     }
 }
