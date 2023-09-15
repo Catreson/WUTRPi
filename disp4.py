@@ -12,7 +12,7 @@ pygame.init()
 laptime = 0.0
 delta = 0.0
 lapno = 0
-rtk_flag = 0
+rtk_flag = (255, 0, 0)
 
 # display configuration -------------------
 display_resolution = [800, 480]
@@ -95,7 +95,10 @@ def on_message(client, userdata, message):
             print('err')
     elif message.topic == 'bike/display/rtk':
         global rtk_flag
-        rtk_flag = float(mesenge)
+        if int(mesenge) == 1:
+            rtk_flag = (0, 240, 0)
+        else:
+            rtk_flag = (240, 0, 0)
     print('mqtt')
 
 
@@ -186,7 +189,7 @@ while running:
         img = font3.render("%.2f" %data1[7], True, cfont0)
         screen.blit(img, (off1 + 665, offtop0 + 245))
 
-        img = font3.render("RTK", True, cfont0)
+        img = font3.render("RTK", True, rtk_flag)
         screen.blit(img, (off1 + 665, offtop0 - 10))
 
         img = font2.render(str(data1[4]), True, cfont0)
