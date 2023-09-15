@@ -290,6 +290,7 @@ int main() {
     while (true) {
         readNMEA(i2cHandle, top);
         readRTCM(i2cHandle);
+        std::sleep(0.02);
     }
     close(i2cHandle);
     return 0;
