@@ -41,6 +41,7 @@ cfont1 = (0, 0, 0)
 rpm_col = (200, 200, 200)
 font1 = pygame.font.SysFont(None, 180)
 font2 = pygame.font.SysFont(None, 100)
+font3 = pygame.font.SysFont(None, 60)
 
 FPS = 10
 fpsClock = pygame.time.Clock()
@@ -57,6 +58,7 @@ screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
 pygame.display.set_caption('Display')
 screen_background_0 = pygame.image.load("/home/catreson/WUTRPi/res/back_0.png").convert()
 screen_background_1 = pygame.image.load("/home/catreson/WUTRPi/res/back_1.png").convert()
+screen_background_2 = pygame.image.load("/home/catreson/WUTRPi/res/back_2.png").convert()
 screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
 listen_topic = "bike/display/#"
 
@@ -177,8 +179,8 @@ while running:
         img = font1.render(str(round(data1[0])), True, cfont0)
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
-        img = font2.render("%.2f" %data1[7], True, cfont0)
-        screen.blit(img, (off1 + 610, offtop0 + 80))
+        img = font3.render("%.2f" %data1[7], True, cfont0)
+        screen.blit(img, (off1 + 610, offtop0 + 120))
 
         img = font2.render(str(data1[4]), True, cfont0)
         screen.blit(img, (off1 + 645, offtop0 + 2 * height2 + 20))
