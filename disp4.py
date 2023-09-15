@@ -102,6 +102,14 @@ def on_message(client, userdata, message):
             rtk_flag = (0, 240, 0)
         else:
             rtk_flag = (240, 0, 0)
+    elif message.topic == 'bike/display/ecu':
+        global engine_mode
+        global screen_mode
+        engine_mode = mesenge
+        if engine_mode == 'P':
+            screen_mode = 2
+        else:
+            screen_mode = -1
     print('mqtt')
 
 
@@ -185,6 +193,32 @@ while running:
 
         img = font1.render("%.3f" %delta, True, cfont0)
         screen.blit(img, (off2, offtop0 + height2))
+
+        img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
+        screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
+
+        img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
+        screen.blit(img, (off1 + 665, offtop0 + 245))
+
+        img = font3.render("RTK", True, rtk_flag) # rtk indicator
+        screen.blit(img, (off1 + 665, offtop0 - 10))
+
+        img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
+        screen.blit(img, (off1 + 665, offtop0 + 80))
+
+        img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
+        screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
+
+        if inversion == 1:
+            pixels = pygame.surfarray.pixels2d(screen)
+            pixels ^= 2 ** 32 - 1
+            del pixels
+
+    if abs(screen_mode) == 2:
+        screen.blit(screen_background_2, (0, 0))
+
+        img = font1.render(sec2min(laptime), True, cfont0)
+        screen.blit(img, (off2 + 80, offtop0 + 80))
 
         img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
