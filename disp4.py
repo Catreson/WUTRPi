@@ -13,7 +13,7 @@ laptime = 0.0
 delta = 0.0
 lapno = 0
 rtk_flag = (255, 0, 0)
-engine_mode = "A"
+engine_mode = "PL"
 
 # display configuration -------------------
 display_resolution = [800, 480]
