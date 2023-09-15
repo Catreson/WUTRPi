@@ -183,7 +183,7 @@ while running:
         img = font1.render(str(delta), True, cfont0)
         screen.blit(img, (off2, offtop0 + height2))
 
-        img = font1.render(str(round(data1[0])), True, cfont0)
+        img = font1.render("%.0f" %data1[0], True, cfont0)
         screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
         img = font3.render("%.2f" %data1[7], True, cfont0)
@@ -193,7 +193,7 @@ while running:
         screen.blit(img, (off1 + 665, offtop0 - 10))
 
         img = font2.render("%.0f" %data1[4], True, cfont0)
-        screen.blit(img, (off1 + 645, offtop0 + 2 * height2 + 20))
+        screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
 
         if inversion == 1:
             pixels = pygame.surfarray.pixels2d(screen)
