@@ -160,7 +160,7 @@ volatile double mili()
 {
     double fractional_seconds_since_epoch
     = std::chrono::duration_cast<std::chrono::duration<double>>(
-        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
     return fractional_seconds_since_epoch;
 }
 
