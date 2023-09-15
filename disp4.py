@@ -187,7 +187,7 @@ while running:
         screen.blit(img, (off1 + 665, offtop0 + 245))
 
         img = font3.render("RTK", True, cfont0)
-        screen.blit(img, (off1 + 665, offtop0))
+        screen.blit(img, (off1 + 665, offtop0 - 10))
 
         img = font2.render(str(data1[4]), True, cfont0)
         screen.blit(img, (off1 + 645, offtop0 + 2 * height2 + 20))
