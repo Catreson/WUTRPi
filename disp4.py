@@ -192,7 +192,7 @@ while running:
         img = font3.render("RTK", True, rtk_flag)
         screen.blit(img, (off1 + 665, offtop0 - 10))
 
-        img = font2.render(str(data1[4]), True, cfont0)
+        img = font2.render("%.1f" %data1[4], True, cfont0)
         screen.blit(img, (off1 + 645, offtop0 + 2 * height2 + 20))
 
         if inversion == 1:
