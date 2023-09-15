@@ -205,7 +205,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
             hdop = 0;
         else{
             hdop = std::stod(msg[8]);
-            rtk_flag = (msg[6] != "") ? (msg[6][0] == "F" ? 1 : 0): rtk_flag;
+            rtk_flag = (msg[6] != "") ? (msg[6] == "FFFFNN" ? 1 : 0): rtk_flag;
             disp_counter++;
             if(disp_counter > 100)
             {
