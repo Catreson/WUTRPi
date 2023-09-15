@@ -13,7 +13,7 @@ laptime = 0.0
 delta = 0.0
 lapno = 0
 rtk_flag = (255, 0, 0)
-engine_mode = "P"
+engine_mode = "A"
 
 engine_mode_dict = { 'P' : (240, 240, 0), 'L' : (0, 240, 0), 'A' : (240, 0, 0)}
 
