@@ -209,7 +209,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
             disp_counter++;
             if(disp_counter > 100)
             {
-                top2.publish(std::move(std::to_string(rtk_flags)));
+                top2.publish(std::move(std::to_string(rtk_flag)));
                 disp_counter = 0;
             }
         }
