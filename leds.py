@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-from common import SHM
+from common import SHM, MQTT_CLIENT
 import time
 
 led_1 = 10100
@@ -11,15 +11,22 @@ rev_limiter = 11000
 ptim = 0
 tim = 0
 ecu_m = 'A'
+topic = "bike/display/ecu"
+
+print('MQTT init')
+mqtit = MQTT_CLIENT(client_id='leds')
 
 def ecu_ping(channel):
     global ptim
+    global mqtit
     global ecu_m
     tim = time.time()
     if ecu_m != 'L' and 0.3 > tim - ptim > 0.2:
         ecu_m = 'L'
+        mqtit.send(topic, "L")
     elif tim - ptim > 2:
         ecu_m = 'P'
+        mqtit.send(topic, 'P')
     ptim = tim
 
 GPIO.setmode(GPIO.BCM)
@@ -49,6 +56,7 @@ while 1:
     tim = time.time()
     if ecu_m != 'A' and not GPIO.input(25) and tim - ptim > 2:
         ecu_m = 'A'
+        mqtit.send(topic, "A")
     rpm = cm.read("rpm")
     gear = cm.read("gear")
     if GPIO.input(25) and ecu_m != 'L':
