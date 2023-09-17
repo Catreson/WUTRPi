@@ -8,7 +8,15 @@ led_3 = 10300
 led_4 = 10400
 led_flash = 10450
 rev_limiter = 11000
+ptim = 0
+tim = 0
 
+def ecu_ping(channel):
+    global tim
+    global ptim
+    tim = time.time()
+    print(str(tim - ptim))
+    ptim = tim
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(23, GPIO.OUT) # gear_set
@@ -17,6 +25,9 @@ GPIO.setup(21, GPIO.OUT) # led1
 GPIO.setup(20, GPIO.OUT) # led2
 GPIO.setup(16, GPIO.OUT) # led3
 GPIO.setup(12, GPIO.OUT) # led 4
+GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # ecu
+GPIO.add_event_detect(25, GPIO.FALLING,
+            callback=ecu_ping, bouncetime=10)
 
 def display_gear(current_gear):
     GPIO.output(23, GPIO.HIGH)
