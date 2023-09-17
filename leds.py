@@ -10,13 +10,18 @@ led_flash = 10450
 rev_limiter = 11000
 ptim = 0
 tim = 0
+ecu_m = 'A'
 
 def ecu_ping(channel):
-    global tim
     global ptim
+    global ecu_m
     tim = time.time()
-    print(str(tim - ptim))
+    if ecu_m != 'L' and 0.3 > tim - ptim > 0.2:
+        ecu_m = 'L'
+    elif tim - ptim > 2:
+        ecu_m = 'P'
     ptim = tim
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(23, GPIO.OUT) # gear_set
@@ -41,8 +46,13 @@ prev_gear = 0.0
 cm = SHM()
 
 while 1:
+    tim = time.time()
+    if ecu_m != 'A' and not GPIO.input(25) and tim - ptim > 2:
+        ecu_m = 'A'
     rpm = cm.read("rpm")
     gear = cm.read("gear")
+    if GPIO.input(25) and ecu_m != 'L':
+        ecu_m = 'P'
     if led_1 > rpm:
         GPIO.output(21, GPIO.LOW)
         GPIO.output(20, GPIO.LOW)
