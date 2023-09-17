@@ -39,7 +39,7 @@ GPIO.setup(16, GPIO.OUT) # led3
 GPIO.setup(12, GPIO.OUT) # led 4
 GPIO.setup(25, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # ecu
 GPIO.add_event_detect(25, GPIO.FALLING,
-            callback=ecu_ping, bouncetime=10)
+            callback=ecu_ping, bouncetime=100)
 
 def display_gear(current_gear):
     GPIO.output(23, GPIO.HIGH)
