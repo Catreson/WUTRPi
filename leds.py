@@ -54,7 +54,7 @@ cm = SHM()
 
 while 1:
     tim = time.time()
-    if ecu_m != 'A' and not GPIO.input(25) and tim - ptim > 2:
+    if ecu_m != 'A' and not GPIO.input(25) and tim - ptim > 1:
         ecu_m = 'A'
         mqtit.send(topic, "A")
     rpm = cm.read("rpm")
