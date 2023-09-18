@@ -188,7 +188,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
     std::string even;
     std::string inpt = convertToString((char*)ptr);
     std::stringstream strim(convertToString((char*)ptr));
-    std::cout<<inpt<<'\n';
+    //std::cout<<inpt<<'\n';
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
