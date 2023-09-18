@@ -313,7 +313,6 @@ void fill_timestamp()
 
     file.close();
     }
-
 }
 
 int main() {
