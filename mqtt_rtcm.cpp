@@ -309,7 +309,7 @@ void fill_timestamp()
     {
     std::string line;
     std::getline(file,line);
-    timestamp = std::stod(line);
+    timestamp = std::stod(line) + (double)37;
 
     file.close();
     }
