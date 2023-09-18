@@ -168,9 +168,10 @@ unsigned long millis() {
 
 volatile double mili()
 {
-    auto tim = std::chrono::utc_clock::now();
-    double val = std::chrono::duration<double> tim;
-    return val;
+    double fractional_seconds_since_epoch
+    = std::chrono::duration_cast<std::chrono::duration<double>>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    return fractional_seconds_since_epoch;
 }
 
 double dms2dd(double dms){
@@ -312,6 +313,7 @@ void fill_timestamp()
 
     file.close();
     }
+
 }
 
 int main() {
