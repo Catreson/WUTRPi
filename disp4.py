@@ -92,7 +92,7 @@ def on_message(client, userdata, message):
                 lapno = msg[3]
                 laptim1 = msg[4]
                 if float(delt1) < 1000000:
-                    delta = delt1
+                    delta = float(delt1)
                 if float(laptim1) < 1000000:
                     laptime = laptim1
         except:
