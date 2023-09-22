@@ -10,7 +10,7 @@ http://wsrt.pl \
 [Instagram](https://www.instagram.com/wutsimracingtech/)
 
 # Module description
-common - shared methods\
+common - shared classes\
 main - used to run and maintain modules' lifes\
 gyro - used to run MPU6050 accelerometer + gyroscope (IMU), communication through SMBus\
 pyro - used to run multiple MLX90614 pyrometers through SMBus\
