@@ -9,18 +9,22 @@
 #include <chrono>
 #include <algorithm>
 #include "mqtt/async_client.h"
+#include <fstream>
 #include <sstream>
 
 #define RCV_ADDR 0x42
 #define RTCM3_PREAMBLE 0xD3
 #define NMEA_PREAMBLE 0x24
 #define ENDLINE 0x0A
-#define FILENAME "/home/catreson/dane_test/nmea_messages"
 
+float timestamp;
 long timeStart;
+double hdop = 0;
+int rtk_flag = 0;
 
 const std::string DFLT_ADDRESS { "localhost:1883" };
 const std::string TOPIC { "bike/sensor/gps" };
+const std::string TOPIC2 { "bike/display/rtk" };
 const std::string CLIENT_ID { "gipies" };
 const int QOS = 0;
 
@@ -30,6 +34,13 @@ const uint8_t RMC_SET[]{
 	0x91, 0x20, 0x00, 0xAB, 0x00, 0x91, 
 	0x20, 0x01, 0x62, 0x48   
 	};
+
+const uint8_t SET_NMEA[] = {
+    0xB5, 0x62, 0x06, 0x8A, 0x0E, 0x00,
+    0x00, 0x01, 0x00, 0x00, 0xAB, 0x00,
+    0x91, 0x20, 0x01, 0xB5, 0x00, 0x91,
+    0x20, 0x01, 0x63, 0x1C
+};
 
 const uint8_t USB_SET[]{
     0xB5, 0x62, 0x06, 0x8A, 0x18, 0x00,
@@ -107,6 +118,20 @@ const uint8_t SET_I2C_IN[] = {
 
 };
 
+const uint8_t GPS_EXC_SET[]{
+    0xB5, 0x62, 0x06, 0x8A, 0x36, 0x00,
+    0x00, 0x01, 0x00, 0x00, 0x1F, 0x00,
+    0x31, 0x10, 0x01, 0x20, 0x00, 0x31,
+    0x10, 0x00, 0x01, 0x00, 0x31, 0x10,
+    0x01, 0x03, 0x00, 0x31, 0x10, 0x01,
+    0x04, 0x00, 0x31, 0x10, 0x01, 0x21,
+    0x00, 0x31, 0x10, 0x00, 0x22, 0x00,
+    0x31, 0x10, 0x00, 0x24, 0x00, 0x31,
+    0x10, 0x00, 0x25, 0x00, 0x31, 0x10,
+    0x00, 0x26, 0x00, 0x31, 0x10, 0x00,
+    0x4E, 0xA9
+};
+
 const uint8_t* commands[] = {
     DISABLE_UART1,
     DISABLE_UART2,
@@ -117,8 +142,10 @@ const uint8_t* commands[] = {
     SET_RATE_GAL,
     SET_RATE_GLO,
     SET_RATE_BDS,
-    RMC_SET,
-    USB_SET
+    SET_NMEA,
+    USB_SET,
+    GPS_EXC_SET
+
 };
 
 std::string convertToString(char* a)
@@ -139,7 +166,7 @@ unsigned long millis() {
            ).count();
 }
 
-double mili()
+volatile double mili()
 {
     double fractional_seconds_since_epoch
     = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -154,12 +181,14 @@ double dms2dd(double dms){
     return deg+min/100;
 }
 
-void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
+void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top2, double stamp) {
+    static int disp_counter = 0;
     std::vector<std::string> msg;
     std::string str;
     std::string even;
     std::string inpt = convertToString((char*)ptr);
-    std::stringstream strim(convertToString((char*)ptr)); 
+    std::stringstream strim(convertToString((char*)ptr));
+    //std::cout<<inpt<<'\n';
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
@@ -167,14 +196,28 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top) {
 	    {
         if(msg[8] == "")
             msg[8] = std::to_string(0);
-        even = "gps," + std::to_string(mili()) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] +" 5,bike/sensor/gps,string";
-        //even = std::vformat("gps,{},{} {} {} {} 5,bike/sensor/gps,string", std::to_string(mili()), std::to_string(dms2dd(stod(msg[5]))), std::to_string(dms2dd(stod(msg[3]))), std::to_string(1.852 * std::stod(msg[7])), msg[8]);
-		//even = std::format("gps,{},{} {} {} {} 5,bike/sensor/gps,string", mili(), dms2dd(stod(msg[5])), dms2dd(stod(msg[3])), 1.852 * std::stod(msg[7]), msg[8]);
-		top.publish(std::move(even));
+        even = "gps," + std::to_string(stamp) + "," + std::to_string(dms2dd(stod(msg[5]))) + " " + std::to_string(dms2dd(stod(msg[3]))) + " " + std::to_string(1.852 * std::stod(msg[7])) + " "  + msg[8] + " " + std::to_string(hdop) + " " + std::to_string(rtk_flag) + ",bike/sensor/gps,string";
+		top1.publish(std::move(even));
+        }
+        if(msg[0] == "$GNGNS")
+	    {
+        if(msg[8] == "")
+            hdop = 0;
+        else{
+            hdop = std::stod(msg[8]);
+            rtk_flag = (msg[6] != "") ? ((msg[6] == "FFFFNN") ? 1 : 0): rtk_flag;
+            disp_counter++;
+            if(disp_counter > 100)
+            {
+                top2.publish(std::move(std::to_string(rtk_flag)));
+                disp_counter = 0;
+            }
+        }
         }
     }
 
-    catch(std::exception exc){
+    catch(std::exception &exc){
+        std::cout << exc.what();
         std::cout<<"No mqtt\n";
     }
         
@@ -203,6 +246,7 @@ void i2cWrite(const std::vector<uint8_t> data, int i2cHandle) {
 }
 
 void readRTCM(int i2cHandle) {
+    while(true){
     std::vector<uint8_t> rtcm_bytes;
     char rtcm_byte;
     if (std::cin.get(rtcm_byte) && rtcm_byte == RTCM3_PREAMBLE) {
@@ -214,9 +258,21 @@ void readRTCM(int i2cHandle) {
         }
         i2cWrite(rtcm_bytes, i2cHandle);
     }
+    }
 }
 
-void readNMEA(int i2cHandle, mqtt::topic& top) {
+void readNMEA(int i2cHandle) {
+
+    mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
+    mqtt::topic top1(cli, TOPIC, QOS, true);
+    mqtt::topic top2(cli, TOPIC2, QOS, true);
+    try{
+        cli.connect()->wait();
+    }
+    catch(std::exception){
+        std::cerr<<"No client";
+    }
+    while(true){
     uint8_t received_bytes[92] = {'$'};
     uint8_t received_byte;
     int i = 1;
@@ -228,7 +284,9 @@ void readNMEA(int i2cHandle, mqtt::topic& top) {
             i++;
         }
         received_bytes[i] = ENDLINE;
-        write_to_file(received_bytes, i+1, top);
+        double stamp = mili() - timestamp;
+        write_to_file(received_bytes, i+1, top1, top2, stamp);
+    }
     }
 }
 
@@ -244,21 +302,27 @@ int setup() {
     return i2cHandle;
 }
 
+void fill_timestamp()
+{
+    std::ifstream file ("/home/catreson/skrypty/timestamp.txt");
+    if (file.is_open())
+    {
+    std::string line;
+    std::getline(file,line);
+    timestamp = std::stod(line);
+
+    file.close();
+    }
+
+}
+
 int main() {
     int i2cHandle = setup();
+    fill_timestamp();
     timeStart = millis();
-    mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
-    mqtt::topic top(cli, TOPIC, QOS, true);
-    try{
-        cli.connect()->wait();
-    }
-    catch(std::exception){
-        std::cerr<<"No client";
-    }
-    while (true) {
-        readNMEA(i2cHandle, top);
-        readRTCM(i2cHandle);
-    }
+    std::thread th2(readRTCM, i2cHandle);
+    std::thread th1(readNMEA, i2cHandle);
+    th1.join();
     close(i2cHandle);
     return 0;
 }

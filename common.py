@@ -53,7 +53,7 @@ class SHM(): #metaclass=Singleton):
     names_dict = defaultdict(lambda : 16)
 
     def fill_names_dict(self):
-        with open('res/sensors.csv', 'r') as filet:
+        with open('/home/catreson/WUTRPi/res/sensors.csv', 'r') as filet:
             sensor_number = 0
             for sensor in filet:
                 self.names_dict[sensor.strip()] = sensor_number
@@ -71,6 +71,7 @@ class SHM(): #metaclass=Singleton):
             self.disp_shm = shared_memory.SharedMemory(name='disp_shm')
             resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
             self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+        print('SHM init complete')
 
     def save(self, name, var):
         self.b[self.names_dict[name]] = var
@@ -82,7 +83,8 @@ class SHM(): #metaclass=Singleton):
         return self.b[:]
 
 class MQTT_CLIENT():
-    
+
+    timestam = 0
     def send_mqtt(self, topic, event):
         self.client.publish(topic, event)
     
@@ -99,7 +101,13 @@ class MQTT_CLIENT():
         self.client.connect('localhost')
         logging.info('Connceted to localhost')
         self.is_offline = offline
-        self.offline_file = SAVE_CSV()
+        if offline == 1:
+            self.offline_file = SAVE_CSV()
+        with open('/home/catreson/skrypty/timestamp.txt','r') as filet:
+            tmp = filet.readline()
+            tmp.strip()
+            self.timestam = float(tmp)
+
         
     def send(self, topic, event):
         self.save_mode[self.is_offline](self, topic = topic, event = event)

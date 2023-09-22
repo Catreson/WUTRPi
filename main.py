@@ -9,7 +9,10 @@ from common import READ_TRIGGER
 
 pyro_list = [['pyro_fc', 0x5a],
   ['pyro_fr', 0x6a],
-  ['pyro_fl', 0x7a]]
+  ['pyro_fl', 0x7a],
+  ['pyro_rc', 0x4c],
+  ['pyro_rr', 0x6c],
+  ['pyro_rl', 0x5c]]
 
   
 offline = 0
@@ -22,7 +25,7 @@ def ECU_thread():
 def susp_thread():
     global offline
     susp = SUSPENSION(offline = offline) 
-    susp_trigger = READ_TRIGGER(frequency = 200, func = susp.read_data)
+    susp_trigger = READ_TRIGGER(frequency = 100, func = susp.read_data)
     
 def giro_thread():
     global offline

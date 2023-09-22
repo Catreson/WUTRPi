@@ -92,8 +92,8 @@ class ECU():
             calc = sensor[3](self, x = value)
             self.cm.save(name = sensor[1], var = calc)
             #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
-            if time.time() - self.succes_read > 4:
+            self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
+            if time.time() - self.succes_read > 1.5:
                 self.synchronize_read()
             
 if __name__ == "__main__":
