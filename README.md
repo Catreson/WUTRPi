@@ -9,7 +9,7 @@ http://wsrt.pl \
 [Facebook](https://www.facebook.com/wutsimracing/) \
 [Instagram](https://www.instagram.com/wutsimracingtech/)
 
-# Module description
+# Modules description
 common - shared classes\
 main - used to run and maintain modules' lifes\
 gyro - used to run MPU6050 accelerometer + gyroscope (IMU), communication through SMBus\
@@ -34,8 +34,8 @@ SIM7600E-H 4G HAT\
 RP2040 used to manage speed sensors\
 Motorcycle
 
-# Software description:
-Software listed in module name description\
+# Software list:
+Software listed in modules description\
 Mosquitto MQTT broker\
 SAS ESP from our sponsor SAS Institute\
 Speed sensors software by [Mateusz Klisiewicz](https://github.com/mklisiewicz/WSRT/tree/main/PiProjects/SpeedSensor)
