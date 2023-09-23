@@ -76,6 +76,7 @@ class SUSPENSION():
         return potentiometer_length * analog_value / self.ANALOG_RANGE
 
     def read_data(self):
+        ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
         print(self.val)
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict['susp_f']), potentiometer_length=150)
@@ -90,6 +91,7 @@ class SUSPENSION():
         self.cm.save('steer_angle', steer_angle)
         even = f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
         self.mqtit.send(topic=self.write_topic, event=even)
+        print(time.time() - ptim)
 
     def __del__(self):
         print("Program end")
