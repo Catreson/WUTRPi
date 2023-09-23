@@ -3,7 +3,7 @@ import time
 import logging
 from lib import ADS1263
 from common import MQTT_CLIENT, SHM, READ_TRIGGER
-
+from numba import njit
 
 class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
