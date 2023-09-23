@@ -39,7 +39,7 @@ class SUSPENSION():
 
         logging.info('Init susp')
         self.ADC = ADS1263.ADS1263()
-        if self.ADC.ADS1263_init_ADC1('ADS1263_100SPS') == -1:
+        if self.ADC.ADS1263_init_ADC1('ADS1263_400SPS') == -1:
             sys.exit('ADC failed to initialize')
         self.ADC.ADS1263_SetMode(0)  # 0 is singleChannel, 1 is diffChannel
         logging.info('ADC set')
