@@ -83,6 +83,7 @@ class SUSPENSION():
     def potentiometer(analog_value, potentiometer_length):
         return potentiometer_length * analog_value / 0x7fffffff
 
+    @jit
     def read_data(self):
         ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
