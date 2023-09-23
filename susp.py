@@ -3,7 +3,7 @@ import time
 import logging
 from lib import ADS1263
 from common import MQTT_CLIENT, SHM, READ_TRIGGER
-from numba import njit
+from numba import jit
 
 class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
@@ -68,19 +68,19 @@ class SUSPENSION():
                 dat = line.split(',')
                 self.corr_dict[dat[0]] = float(dat[1])
 
-    @njit
+    @jit
     def ch_shock(self, potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
 
-    @njit
+    @jit
     def ch_steer(self, potentiometer_length):
         return -0.0006 * pow(potentiometer_length, 2) - 0.4231 * potentiometer_length + -0.0026
 
-    @njit
+    @jit
     def potentiometer(self, analog_value, potentiometer_length):
         return potentiometer_length * analog_value / self.ANALOG_RANGE
 
-    @njit
+    @jit
     def read_data(self):
         ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
