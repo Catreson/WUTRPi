@@ -78,7 +78,6 @@ class SUSPENSION():
     def read_data(self):
         ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
-        print(self.val)
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict['susp_f']), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_dict['susp_r']), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
