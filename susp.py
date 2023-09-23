@@ -83,7 +83,7 @@ class SUSPENSION():
     def potentiometer(analog_value, potentiometer_length):
         return potentiometer_length * analog_value / 0x7fffffff
 
-    @jit
+
     def read_data(self):
         ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
@@ -93,6 +93,7 @@ class SUSPENSION():
         p_brake = self.potentiometer(analog_value=self.val[2] - self.corr_dict['p_brake'], potentiometer_length=227)
         pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_dict['steer_angle'], potentiometer_length=150)
         steer_angle = self.ch_steer(pot_sa)
+        print(f'calc {time.time() - ptim}')
         self.cm.save('susp_f', susp_f)
         self.cm.save('susp_r', susp_r)
         self.cm.save('p_brake', p_brake)
