@@ -70,12 +70,12 @@ class SUSPENSION():
 
     @staticmethod
     @njit
-    def ch_shock(self, potentiometer_length):
+    def ch_shock(potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
 
     @staticmethod
     @njit
-    def ch_steer(self, potentiometer_length):
+    def ch_steer(potentiometer_length):
         return -0.0006 * pow(potentiometer_length, 2) - 0.4231 * potentiometer_length + -0.0026
 
     @staticmethod
