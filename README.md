@@ -17,7 +17,7 @@ pyro - used to run multiple MLX90614 pyrometers through SMBus\
 susp - used to run ADS1263 analog readings from linear potentiometers (suspension_front, suspension_read, steer_angle) and brake pressure sensor, communication through SPI\
 rs232 - used to capture data from ECUMaster EMU Black, transfered by AIM dash protocol\
 mqtt_gps - used to pass RTCM ntrip stream to gps module and read GNSS data, made from [Matusz's](https://github.com/mklisiewicz/WSRT/tree/main/PiProjects/GNSS). Has to receive ntrip stream via str2str from RTKlib. Communication through I2C   \
-backup - used to backup esp output data exposed to overwrite when rebooting
+backup - used to backup esp output data exposed to overwrite when rebooting \
 leds - managing LED strip, gear display and ECU mode
 
 # Hardware description
