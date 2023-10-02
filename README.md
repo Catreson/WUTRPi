@@ -26,7 +26,7 @@ Raspberry Pi 4B 4GB\
 ADS1263 ADC HAT from WaveShare\
 3 linear potentiometers\
 Bosch 0265 005 303 brake pressure sensor\
-6 MLX90614 pytometers\
+6 MLX90614 pyrometers\
 2 MPU6050 accelerometers + gyroscopes\
 SparkFun GPS-RTK-SMA Breakout - ZED-F9P\
 SIM7600E-H 4G HAT\
