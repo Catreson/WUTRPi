@@ -18,7 +18,8 @@ susp - used to run ADS1263 analog readings from linear potentiometers (suspensio
 rs232 - used to capture data from ECUMaster EMU Black, transfered by AIM dash protocol\
 mqtt_gps - used to pass RTCM ntrip stream to gps module and read GNSS data, made based on [Matusz's](https://github.com/mklisiewicz/WSRT/tree/main/PiProjects/GNSS). Has to receive ntrip stream via str2str from RTKlib. Communication through I2C   \
 backup - used to backup esp output data exposed to overwrite when rebooting \
-leds - managing LED strip, gear display and ECU mode
+leds - managing LED strip, gear display and ECU mode \
+disp4 - interactive GUI to work with 4.3 inch touchscreen
 
 # Hardware description
 Raspberry Pi 4B 4GB\
