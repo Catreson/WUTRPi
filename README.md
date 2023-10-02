@@ -21,6 +21,8 @@ backup - used to backup esp output data exposed to overwrite when rebooting \
 leds - managing LED strip, gear display and ECU mode \
 disp4 - interactive GUI to work with 4.3 inch touchscreen
 
+![image](https://drive.google.com/uc?export=view&id=1jlI3O5ybrKBeGud8adDAkh9nt0LPHp7L)
+
 # Hardware description
 Raspberry Pi 4B 4GB\
 4.3 inch touch display\
