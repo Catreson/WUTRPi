@@ -53,6 +53,9 @@ class GIROSCOPES:
                        event=f"gyro1,{time.time() - self.mqtt.timestam}, {accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double")
             self.mqtt.send(topic=self.write_topic,
                        event=f"gyro2,{time.time() - self.mqtt.timestam}, {accel2_data['x']} {accel2_data['y']} {accel2_data['z']} {gyro2_data['x']} {gyro2_data['y']} {gyro2_data['z']},bike/sensor/imu,double")
+        except:
+            print("err")
+
 if __name__ == "__main__":
     giro = GIROSCOPES(bus = 1)
     reader = READ_TRIGGER(2, giro.read_data)
