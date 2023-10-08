@@ -39,6 +39,19 @@ class GIROSCOPES:
         try:
             accel1_data = self.gyro1.get_accel_data()
             gyro1_data = self.gyro1.get_gyro_data()
+            """
+            self.mqtt.send(topic = self.write_topic, event = f"acc_x,{time.time() - self.mqtt.timestam},{accel_data['x']},bike/sensor/imu,double")
+            self.mqtt.send(topic = self.write_topic, event = f"acc_y,{time.time() - self.mqtt.timestam},{accel_data['y']},bike/sensor/imu,double")
+            self.mqtt.send(topic = self.write_topic, event = f"acc_z,{time.time() - self.mqtt.timestam},{accel_data['z']},bike/sensor/imu,double")
+            self.mqtt.send(topic = self.write_topic, event = f"gyro_x,{time.time() - self.mqtt.timestam},{gyro_data['x']},bike/sensor/imu,double")
+            self.mqtt.send(topic = self.write_topic, event = f"gyro_y,{time.time() - self.mqtt.timestam},{gyro_data['y']},bike/sensor/imu,double")
+            self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{time.time() - self.mqtt.timestam},{gyro_data['z']},bike/sensor/imu,double")
+            """
+            self.mqtt.send(topic=self.write_topic,
+                       event=f"gyro1,{time.time() - self.mqtt.timestam}, {accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double")
+        except:
+            print("err1")
+        try:
             accel2_data = self.gyro2.get_accel_data()
             gyro2_data = self.gyro2.get_gyro_data()
             """
@@ -50,11 +63,9 @@ class GIROSCOPES:
             self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{time.time() - self.mqtt.timestam},{gyro_data['z']},bike/sensor/imu,double")
             """
             self.mqtt.send(topic=self.write_topic,
-                       event=f"gyro1,{time.time() - self.mqtt.timestam}, {accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double")
-            self.mqtt.send(topic=self.write_topic,
                        event=f"gyro2,{time.time() - self.mqtt.timestam}, {accel2_data['x']} {accel2_data['y']} {accel2_data['z']} {gyro2_data['x']} {gyro2_data['y']} {gyro2_data['z']},bike/sensor/imu,double")
         except:
-            print("err")
+            print("err2")
 
 if __name__ == "__main__":
     giro = GIROSCOPES(bus = 1)
