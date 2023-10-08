@@ -11,22 +11,27 @@ class GIROSCOPES:
     
     def __init__(self, address = 0x68, bus = 1, offline = 0):
         self.gyro1 = mpu6050(address, bus)
-        self.gyro1.set_accel_range(accel_range = self.gyro1.ACCEL_RANGE_4G)
-        if self.gyro1.read_accel_range() != self.gyro1.ACCEL_RANGE_4G:
-            logging.warning(f'Acceleration range is set to {self.gyro1.read_accel_range()}')
-        self.gyro1.set_gyro_range(gyro_range = self.gyro1.GYRO_RANGE_250DEG)
-        if self.gyro1.read_gyro_range() != self.gyro1.GYRO_RANGE_250DEG:
-            logging.warning(f'Giroscope range is set to {self.gyro1.read_gyro_range()}')
-        self.gyro1.set_filter_range(filter_range = self.gyro1.FILTER_BW_10)
-
-        self.gyro2 = mpu6050(0x69, bus)
-        self.gyro2.set_accel_range(accel_range=self.gyro2.ACCEL_RANGE_4G)
-        if self.gyro2.read_accel_range() != self.gyro2.ACCEL_RANGE_4G:
-            logging.warning(f'Acceleration range is set to {self.gyro2.read_accel_range()}')
-        self.gyro2.set_gyro_range(gyro_range=self.gyro2.GYRO_RANGE_250DEG)
-        if self.gyro2.read_gyro_range() != self.gyro2.GYRO_RANGE_250DEG:
-            logging.warning(f'Giroscope range is set to {self.gyro2.read_gyro_range()}')
-        self.gyro2.set_filter_range(filter_range=self.gyro2.FILTER_BW_10)
+        try:
+            self.gyro1.set_accel_range(accel_range = self.gyro1.ACCEL_RANGE_4G)
+            if self.gyro1.read_accel_range() != self.gyro1.ACCEL_RANGE_4G:
+                logging.warning(f'Acceleration range is set to {self.gyro1.read_accel_range()}')
+            self.gyro1.set_gyro_range(gyro_range = self.gyro1.GYRO_RANGE_250DEG)
+            if self.gyro1.read_gyro_range() != self.gyro1.GYRO_RANGE_250DEG:
+                logging.warning(f'Giroscope range is set to {self.gyro1.read_gyro_range()}')
+            self.gyro1.set_filter_range(filter_range = self.gyro1.FILTER_BW_10)
+        except:
+            print("Err setup1")
+        try:
+            self.gyro2 = mpu6050(0x69, bus)
+            self.gyro2.set_accel_range(accel_range=self.gyro2.ACCEL_RANGE_4G)
+            if self.gyro2.read_accel_range() != self.gyro2.ACCEL_RANGE_4G:
+                logging.warning(f'Acceleration range is set to {self.gyro2.read_accel_range()}')
+            self.gyro2.set_gyro_range(gyro_range=self.gyro2.GYRO_RANGE_250DEG)
+            if self.gyro2.read_gyro_range() != self.gyro2.GYRO_RANGE_250DEG:
+                logging.warning(f'Giroscope range is set to {self.gyro2.read_gyro_range()}')
+            self.gyro2.set_filter_range(filter_range=self.gyro2.FILTER_BW_10)
+        except:
+            print("Err setup2")
         try:
             self.cm = SHM()
         except:
