@@ -25,12 +25,12 @@ def ECU_thread():
 def susp_thread():
     global offline
     susp = SUSPENSION(offline = offline) 
-    susp_trigger = READ_TRIGGER(frequency = 100, func = susp.read_data)
+    susp_trigger = READ_TRIGGER(frequency = 200, func = susp.read_data)
     
 def giro_thread():
     global offline
     giro = GIROSCOPES(address = 0x68, bus = 1, offline = offline)
-    giro_trigger = READ_TRIGGER(frequency = 10, func = giro.read_data)
+    giro_trigger = READ_TRIGGER(frequency = 50, func = giro.read_data)
     
 def pyro_thread():
     global offline

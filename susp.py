@@ -9,6 +9,8 @@ class SUSPENSION():
     corr_dict = {}
     channelList = [0, 1, 2, 3]
     val = [0] * 4
+    eventlist = ""
+    index = 0
     write_topic = 'bike/sensor/susp/'
     listen_topic = 'bike/correction/susp'
 
@@ -76,7 +78,6 @@ class SUSPENSION():
         return potentiometer_length * analog_value / self.ANALOG_RANGE
 
     def read_data(self):
-        ptim = time.time()
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict['susp_f']), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_dict['susp_r']), potentiometer_length=75)
@@ -84,13 +85,19 @@ class SUSPENSION():
         p_brake = self.potentiometer(analog_value=self.val[2] - self.corr_dict['p_brake'], potentiometer_length=227)
         pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_dict['steer_angle'], potentiometer_length=150)
         steer_angle = self.ch_steer(pot_sa)
-        self.cm.save('susp_f', susp_f)
-        self.cm.save('susp_r', susp_r)
-        self.cm.save('p_brake', p_brake)
-        self.cm.save('steer_angle', steer_angle)
-        even = f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
-        self.mqtit.send(topic=self.write_topic, event=even)
-        print(time.time() - ptim)
+
+        self.eventlist += f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string;'
+        self.index += 1
+        if self.index >= 40:
+            self.cm.save('susp_f', susp_f)
+            self.cm.save('susp_r', susp_r)
+            self.cm.save('p_brake', p_brake)
+            self.cm.save('steer_angle', steer_angle)
+            self.mqtit.send(topic=self.write_topic,
+                           event=f"susp,{time.time() - self.mqtit.timestam},{self.eventlist},bike/sensor/susp,string")
+            self.eventlist = ""
+            self.index = 0
+        #self.mqtit.send(topic=self.write_topic, event=even)
 
     def __del__(self):
         print("Program end")

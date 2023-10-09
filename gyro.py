@@ -8,30 +8,25 @@ class GIROSCOPES:
 
     address = 0x68   
     write_topic = 'bike/sensor/imu'
-    
-    def __init__(self, address = 0x68, bus = 1, offline = 0):
-        self.gyro1 = mpu6050(address, bus)
-        try:
-            self.gyro1.set_accel_range(accel_range = self.gyro1.ACCEL_RANGE_4G)
-            if self.gyro1.read_accel_range() != self.gyro1.ACCEL_RANGE_4G:
-                logging.warning(f'Acceleration range is set to {self.gyro1.read_accel_range()}')
-            self.gyro1.set_gyro_range(gyro_range = self.gyro1.GYRO_RANGE_250DEG)
-            if self.gyro1.read_gyro_range() != self.gyro1.GYRO_RANGE_250DEG:
-                logging.warning(f'Giroscope range is set to {self.gyro1.read_gyro_range()}')
-            self.gyro1.set_filter_range(filter_range = self.gyro1.FILTER_BW_10)
-        except:
-            print("Err setup1")
-        try:
-            self.gyro2 = mpu6050(0x69, bus)
-            self.gyro2.set_accel_range(accel_range=self.gyro2.ACCEL_RANGE_4G)
-            if self.gyro2.read_accel_range() != self.gyro2.ACCEL_RANGE_4G:
-                logging.warning(f'Acceleration range is set to {self.gyro2.read_accel_range()}')
-            self.gyro2.set_gyro_range(gyro_range=self.gyro2.GYRO_RANGE_250DEG)
-            if self.gyro2.read_gyro_range() != self.gyro2.GYRO_RANGE_250DEG:
-                logging.warning(f'Giroscope range is set to {self.gyro2.read_gyro_range()}')
-            self.gyro2.set_filter_range(filter_range=self.gyro2.FILTER_BW_10)
-        except:
-            print("Err setup2")
+    gyro_list = []
+    eventlist = ""
+    index = 0
+    def __init__(self, address = [0x68], bus = 1, offline = 0):
+
+        for gyro_address in address:
+            try:
+                gyro = mpu6050(gyro_address, bus)
+                gyro.set_accel_range(accel_range = gyro.ACCEL_RANGE_4G)
+                if gyro.read_accel_range() != gyro.ACCEL_RANGE_4G:
+                    logging.warning(f'Acceleration range is set to {gyro.read_accel_range()}')
+                gyro.set_gyro_range(gyro_range = gyro.GYRO_RANGE_250DEG)
+                if gyro.read_gyro_range() != gyro.GYRO_RANGE_250DEG:
+                    logging.warning(f'Giroscope range is set to {gyro.read_gyro_range()}')
+                gyro.set_filter_range(filter_range = gyro.FILTER_BW_10)
+            except:
+                print(f"Err setup {gyro_address}")
+            else:
+                self.gyro_list.append(gyro)
         try:
             self.cm = SHM()
         except:
@@ -41,40 +36,36 @@ class GIROSCOPES:
         except:
             logging.error('No connection to MQTT broker')
     def read_data(self):
-        try:
-            accel1_data = self.gyro1.get_accel_data()
-            gyro1_data = self.gyro1.get_gyro_data()
+        i = 1
+        for gyro in self.gyro_list:
+            """try:
+                accel1_data = gyro.get_accel_data(g = True)
+                gyro1_data = gyro.get_gyro_data()
+                self.mqtt.send(topic=self.write_topic,
+                       event=f"gyro{i},{time.time() - self.mqtt.timestam},{accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double")
+            except:
+                print("err1")
+            finally:
+                i += 1
             """
-            self.mqtt.send(topic = self.write_topic, event = f"acc_x,{time.time() - self.mqtt.timestam},{accel_data['x']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"acc_y,{time.time() - self.mqtt.timestam},{accel_data['y']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"acc_z,{time.time() - self.mqtt.timestam},{accel_data['z']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_x,{time.time() - self.mqtt.timestam},{gyro_data['x']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_y,{time.time() - self.mqtt.timestam},{gyro_data['y']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{time.time() - self.mqtt.timestam},{gyro_data['z']},bike/sensor/imu,double")
-            """
+            try:
+                accel1_data = gyro.get_accel_data(g = True)
+                gyro1_data = gyro.get_gyro_data()
+                self.eventlist += f"gyro{i},{time.time() - self.mqtt.timestam},{accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double;"
+            except:
+                print("err1")
+            finally:
+                i += 1
+
+        self.index += 1
+        if self.index >= 10:
             self.mqtt.send(topic=self.write_topic,
-                       event=f"gyro1,{time.time() - self.mqtt.timestam}, {accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double")
-        except:
-            print("err1")
-        try:
-            accel2_data = self.gyro2.get_accel_data()
-            gyro2_data = self.gyro2.get_gyro_data()
-            """
-            self.mqtt.send(topic = self.write_topic, event = f"acc_x,{time.time() - self.mqtt.timestam},{accel_data['x']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"acc_y,{time.time() - self.mqtt.timestam},{accel_data['y']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"acc_z,{time.time() - self.mqtt.timestam},{accel_data['z']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_x,{time.time() - self.mqtt.timestam},{gyro_data['x']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_y,{time.time() - self.mqtt.timestam},{gyro_data['y']},bike/sensor/imu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"gyro_z,{time.time() - self.mqtt.timestam},{gyro_data['z']},bike/sensor/imu,double")
-            """
-            self.mqtt.send(topic=self.write_topic,
-                       event=f"gyro2,{time.time() - self.mqtt.timestam}, {accel2_data['x']} {accel2_data['y']} {accel2_data['z']} {gyro2_data['x']} {gyro2_data['y']} {gyro2_data['z']},bike/sensor/imu,double")
-        except:
-            print("err2")
+                           event=f"gyro{i},{time.time() - self.mqtt.timestam},{self.eventlist},bike/sensor/imu,double")
+            self.eventlist = ""
+            self.index = 0
+
+
 
 if __name__ == "__main__":
     giro = GIROSCOPES(bus = 1)
     reader = READ_TRIGGER(2, giro.read_data)
-
-
-

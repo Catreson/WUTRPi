@@ -4,7 +4,7 @@ import time
 from common import SHM, MQTT_CLIENT
 import logging
 import sys
-import RPi.GPIO as GPIO
+import shutil
 
 os.environ["DISPLAY"] = ":0"
 pygame.init()
@@ -20,7 +20,8 @@ engine_mode_dict = { 'P' : (240, 240, 0), 'L' : (0, 240, 0), 'A' : (240, 0, 0)}
 # display configuration -------------------
 display_resolution = [800, 480]
 inversion = -1
-screen_mode = -1
+screen_mode = 0
+race_mode = 0
 rpm_max = 12000
 rpm = 1350
 
@@ -38,6 +39,21 @@ fc_count = 0
 rc_count = 0
 st_count = 0
 pb_count = 0
+splt_count = 0
+
+#splits names fetch
+split_dict = {}
+pather = '/home/catreson/dane_esp_read/'
+entries = os.listdir(pather)
+indexer = 0
+for split in entries:
+    if 'splits_' in split:
+        nam = split.split('.')
+        split_dict[indexer] = [nam[0], split]
+        indexer += 1
+
+split_count = indexer
+current_split = 0
 
 # font setup
 cfont0 = (240, 240, 240)
@@ -52,9 +68,6 @@ FPS = 10
 fpsClock = pygame.time.Clock()
 # end of display configuration -------------
 
-# GPIO config
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
 
 # end GPIO config
 
@@ -64,6 +77,7 @@ pygame.display.set_caption('Display')
 screen_background_0 = pygame.image.load("/home/catreson/WUTRPi/res/back_0.png").convert()
 screen_background_1 = pygame.image.load("/home/catreson/WUTRPi/res/back_1.png").convert()
 screen_background_2 = pygame.image.load("/home/catreson/WUTRPi/res/back_2.png").convert()
+screen_background_3 = pygame.image.load("/home/catreson/WUTRPi/res/back_3.png").convert()
 screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
 listen_topic = "bike/display/#"
 
@@ -105,12 +119,12 @@ def on_message(client, userdata, message):
             rtk_flag = (240, 0, 0)
     elif message.topic == 'bike/display/ecu':
         global engine_mode
-        global screen_mode
+        global race_mode
         engine_mode = mesenge
         if engine_mode == 'P':
-            screen_mode = 2
+            race_mode = 1
         else:
-            screen_mode = -1
+            race_mode = 0
     print('mqtt')
 
 
@@ -128,10 +142,6 @@ try:
     logging.info('Client connected')
 except:
     sys.exit('No connection to MQTT broker')
-
-#GPIO.setmode(GPIO.BCM)
-#GPIO.setwarnings(False)
-#GPIO.setup(21, GPIO.OUT)
 
 # loading screen
 for i in range(40):
@@ -154,11 +164,17 @@ while running:
                 running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             finger = pygame.mouse.get_pos()
-            if 700 <= finger[0] <= 800 and 0 <= finger[1] <= 100:
-                screen_mode = screen_mode * (-1)
-            if screen_mode == -1 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
+
+            if 0 <= finger[1] <= 100:
+                if 700 <= finger[0]:
+                    screen_mode = (screen_mode + 1) % 3
+                elif finger[0] <= 100:
+                    screen_mode = (screen_mode - 1) % 3
+
+            if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                 inversion = inversion * (-1)
-            if screen_mode == 1:
+
+            elif screen_mode == 1:
                 if finger[0] < 200:
                         if 180 < finger[1] < 330:
                             st_count = st_count + 1
@@ -166,7 +182,7 @@ while running:
                                 mqtit.send('bike/correction/susp', 'steer_angle')
                                 st_count = 0
 
-                if 400 < finger[0] < 600:
+                elif 400 < finger[0] < 600:
                     if 30 < finger[1] < 180:
                         fc_count = fc_count + 1
                         if fc_count > 5:
@@ -179,69 +195,88 @@ while running:
                             mqtit.send('bike/correction/susp', 'susp_r')
                             rc_count = 0
 
-                if 600 < finger[0]:
+                elif 600 < finger[0]:
                     if 330 < finger[1] < 480:
                         pb_count = pb_count + 1
                         if pb_count > 5:
                             mqtit.send('bike/correction/susp', 'p_brake')
                             pb_count = 0
 
-    if screen_mode == -1:
-        screen.blit(screen_background_0, (0, 0))
 
-        img = font1.render(sec2min(laptime), True, cfont0)
-        screen.blit(img, (off2, offtop0))
+            elif screen_mode == 2:
+                if 300 <= finger[1] <= 360:
+                    if 60 <= finger[0] <= 240:
+                        current_split = (current_split - 1) % split_count
+                    elif 560 <= finger[0] <= 740:
+                        current_split = (current_split + 1) % split_count
+                    elif 300 <= finger[0] <= 480:
+                        splt_count = splt_count + 1
+                        if splt_count > 5:
+                            shutil.copy(f'{pather}{split_dict[current_split][1]}', f'{pather}splits.csv')
+                            screen.blit(screen_background_3, (0, 0))
+                            img = font1.render('Copied!', True, (255, 255, 255))
+                            screen.blit(img, (140, 100))
+                            pygame.display.flip()
+                            splt_count = 0
+                            time.sleep(3)
 
-        img = font1.render("%.3f" %delta, True, cfont0)
-        screen.blit(img, (off2, offtop0 + height2))
+    if screen_mode == 0:
+        if race_mode == 0:
+            screen.blit(screen_background_0, (0, 0))
 
-        img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
-        screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
+            img = font1.render(sec2min(laptime), True, cfont0)
+            screen.blit(img, (off2, offtop0))
 
-        img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
-        screen.blit(img, (off1 + 665, offtop0 - 10))
+            img = font1.render("%.3f" %delta, True, cfont0)
+            screen.blit(img, (off2, offtop0 + height2))
 
-        img = font3.render("RTK", True, rtk_flag) # rtk indicator
-        screen.blit(img, (off1 + 665, offtop0 + 245))
+            img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
+            screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
-        img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
-        screen.blit(img, (off1 + 665, offtop0 + 80))
+            img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
+            screen.blit(img, (off1 + 665, offtop0 - 10))
 
-        img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
-        screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
+            img = font3.render("RTK", True, rtk_flag) # rtk indicator
+            screen.blit(img, (off1 + 665, offtop0 + 245))
 
-        if inversion == 1:
-            pixels = pygame.surfarray.pixels2d(screen)
-            pixels ^= 2 ** 32 - 1
-            del pixels
+            img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
+            screen.blit(img, (off1 + 665, offtop0 + 80))
 
-    if abs(screen_mode) == 2:
-        screen.blit(screen_background_2, (0, 0))
+            img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
+            screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
 
-        img = font0.render("%.1f" %data1[12], True, cfont0) # speed
-        screen.blit(img, (off2 + 50, offtop0 + 50))
+            if inversion == 1:
+                pixels = pygame.surfarray.pixels2d(screen)
+                pixels ^= 2 ** 32 - 1
+                del pixels
 
-        img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
-        screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
+        else:
+            screen.blit(screen_background_2, (0, 0))
 
-        img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
-        screen.blit(img, (off1 + 665, offtop0 - 10))
+            img = font0.render("%.1f" %data1[12], True, cfont0) # speed
+            screen.blit(img, (off2 + 50, offtop0 + 50))
 
-        img = font3.render("RTK", True, rtk_flag) # rtk indicator
-        screen.blit(img, (off1 + 665, offtop0 + 245))
+            img = font1.render("%.0f" %data1[0], True, cfont0) # rpm
+            screen.blit(img, (off2 + 115, offtop0 + 2 * height2))
 
-        img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
-        screen.blit(img, (off1 + 665, offtop0 + 80))
+            img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
+            screen.blit(img, (off1 + 665, offtop0 - 10))
 
-        img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
-        screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
+            img = font3.render("RTK", True, rtk_flag) # rtk indicator
+            screen.blit(img, (off1 + 665, offtop0 + 245))
 
-        if inversion == 1:
-            pixels = pygame.surfarray.pixels2d(screen)
-            pixels ^= 2 ** 32 - 1
-            del pixels
+            img = font1.render(engine_mode, True, engine_mode_dict[engine_mode])
+            screen.blit(img, (off1 + 665, offtop0 + 80))
 
-    if screen_mode == 1:
+            img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
+            screen.blit(img, (off1 + 655, offtop0 + 2 * height2 + 20))
+
+            if inversion == 1:
+                pixels = pygame.surfarray.pixels2d(screen)
+                pixels ^= 2 ** 32 - 1
+                del pixels
+
+    elif screen_mode == 1:
         screen.blit(screen_background_1, (0, 0))
 
         img = font2.render(str(int(data1[0])), True, cfont1)
@@ -283,7 +318,20 @@ while running:
 
         pygame.draw.rect(screen, rpm_col, pygame.Rect(0, 0, data1[0] / rpm_max * 800, 60))
 
+    elif screen_mode == 2:
+        screen.blit(screen_background_3, (0, 0))
+
+        img = font3.render(split_dict[current_split][0], True, (255,255,255))
+        screen.blit(img, (140, 100))
+
+        pygame.draw.rect(screen, (200, 200, 200), pygame.Rect(60, 300, 180, 60))
+        pygame.draw.polygon(screen, (40, 40, 40), ((120, 330), (180, 310), (180, 350)))
+
+        pygame.draw.rect(screen, (200, 200, 200), pygame.Rect(560, 300, 180, 60))
+        pygame.draw.polygon(screen, (40, 40, 40), ((680, 330), (620, 310), (620, 350)))
+
+        pygame.draw.rect(screen, (0, 200, 0), pygame.Rect(300, 300, 180, 60))
+
     pygame.display.flip()
     fpsClock.tick(FPS)
-GPIO.cleanup()
 pygame.quit()
