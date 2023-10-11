@@ -51,7 +51,7 @@ class GIROSCOPES:
             try:
                 accel1_data = gyro.get_accel_data(g = True)
                 gyro1_data = gyro.get_gyro_data()
-                self.eventlist += f"gyro{i},{time.time() - self.mqtt.timestam},{accel1_data['x']} {accel1_data['y']} {accel1_data['z']} {gyro1_data['x']} {gyro1_data['y']} {gyro1_data['z']},bike/sensor/imu,double;"
+                self.eventlist += f"gyro{i};{time.time() - self.mqtt.timestam};{accel1_data['x']};{accel1_data['y']};{accel1_data['z']};{gyro1_data['x']};{gyro1_data['y']};{gyro1_data['z']}:"
             except:
                 print("err1")
             finally:
