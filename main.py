@@ -48,7 +48,7 @@ proces_dict = {
 if __name__ == "__main__":
     P = []
     ind = 0
-    for proces_name in proces_dict.keys():
+    for proces_name in proces_dict:
         try:
             p1 = Process(target = proces_dict[proces_name], name = proces_name)
             p1.start()
