@@ -18,7 +18,6 @@
 #define ENDLINE 0x0A
 
 float timestamp;
-long timeStart;
 double hdop = 0;
 int rtk_flag = 0;
 
@@ -132,7 +131,7 @@ const uint8_t GPS_EXC_SET[]{
     0x4E, 0xA9
 };
 
-const uint8_t* commands[] = {
+const *uint8_t commands[] = {
     DISABLE_UART1,
     DISABLE_UART2,
     //DISABLE_USB,
@@ -148,19 +147,21 @@ const uint8_t* commands[] = {
 
 };
 
-std::string convertToString(char* a)
+std::string convert_to_string(char* a)
 {
     std::string s = a;
     return s;
 }
 
-void sendConfig(int i2cHandle) {
+void sendConfig(int i2cHandle)
+{
     for (int i = 0; i < sizeof(commands); i++){
         write(i2cHandle, commands[i], sizeof(commands));
     }
 }
 
-unsigned long millis() {
+unsigned long millis()
+{
     return std::chrono::duration_cast<std::chrono::milliseconds>(
                std::chrono::high_resolution_clock::now().time_since_epoch()
            ).count();
@@ -174,7 +175,8 @@ volatile double mili()
     return fractional_seconds_since_epoch;
 }
 
-double dms2dd(double dms){
+double dms2dd(double dms)
+{
     int deg = dms/100;
     double min = (double)dms-100*deg;
     min = 10*min/6;
@@ -186,9 +188,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
     std::vector<std::string> msg;
     std::string str;
     std::string even;
-    std::string inpt = convertToString((char*)ptr);
-    std::stringstream strim(convertToString((char*)ptr));
-    //std::cout<<inpt<<'\n';
+    std::stringstream strim(convert_to_string(std::bit_cast<*char>(ptr)));
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
@@ -225,50 +225,58 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
 
 }
 
-int i2cOpen() {
+int i2cOpen()
+{
     int i2cHandle; 
-    while ((i2cHandle = open("/dev/i2c-1", O_RDWR))<0){
-        std::cerr << "Failed to open I2C device." << std::endl;
+    while ((i2cHandle = open("/dev/i2c-1", O_RDWR))<0)
+    {
+        std::cerr << "Failed to open I2C device.\n";
     }
     return i2cHandle;
 }
 
-void i2cSetAddress(int i2cHandle) {
-    while (ioctl(i2cHandle, I2C_SLAVE, RCV_ADDR) < 0) {
-        std::cerr << "Failed to set I2C address." << std::endl;
+void i2cSetAddress(int i2cHandle)
+{
+    while (ioctl(i2cHandle, I2C_SLAVE, RCV_ADDR) < 0)
+    {
+        std::cerr << "Failed to set I2C address.\n";
     }
 }
 
-void i2cWrite(const std::vector<uint8_t> data, int i2cHandle) {
+void i2cWrite(const std::vector<uint8_t> data, int i2cHandle)
+{
     if (write(i2cHandle, data.data(), data.size()) != data.size()) {
-        std::cerr << "Failed to send I2C data." << std::endl;
+        std::cerr << "Failed to send I2C data.\n";
     }
 }
 
-void readRTCM(int i2cHandle) {
+void readRTCM(int i2cHandle)
+{
     while(true){
     std::vector<uint8_t> rtcm_bytes;
     char rtcm_byte;
-    if (std::cin.get(rtcm_byte) && rtcm_byte == RTCM3_PREAMBLE) {
+    if (std::cin.get(rtcm_byte) && rtcm_byte == RTCM3_PREAMBLE)
+    {
         std::string line;
         std::getline(std::cin, line, '\n');  
-        std::cout << line.length() << std::endl;
-        for (char c : line) {
-            rtcm_bytes.push_back(reinterpret_cast<uint8_t&>(c));
+        for (char c : line)
+        {
+            rtcm_bytes.push_back(std::bit_cast<uint8_t>(c));
         }
         i2cWrite(rtcm_bytes, i2cHandle);
     }
     }
 }
 
-void readNMEA(int i2cHandle) {
+void readNMEA(int i2cHandle)
+{
 
     mqtt::async_client cli(DFLT_ADDRESS, CLIENT_ID);
     mqtt::topic top1(cli, TOPIC, QOS, true);
     mqtt::topic top2(cli, TOPIC2, QOS, true);
     try{
         cli.connect()->wait();
-    }
+    }0b01111111
     catch(std::exception){
         std::cerr<<"No client";
     }
@@ -277,9 +285,10 @@ void readNMEA(int i2cHandle) {
     uint8_t received_byte;
     int i = 1;
 
-    if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE) {
+    if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE)
+    {
         while(read(i2cHandle, &received_byte, 1) == 1 && received_byte != ENDLINE && received_byte > 0x20) {
-            received_byte &= ~(1 << 7);
+            received_byte &= 0b01111111;
             received_bytes[i] = received_byte;
             i++;
         }
@@ -290,14 +299,13 @@ void readNMEA(int i2cHandle) {
     }
 }
 
-int setup() {
+int setup()
+{
     unsigned long startTime = millis();
     int i2cHandle = i2cOpen();
     i2cSetAddress(i2cHandle);
     sendConfig(i2cHandle);
-    while (millis() - startTime < 1000){
-        //std::cout << "Waiting for GPS to start..." << std::endl;
-    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::cout<<"Connected "<<i2cHandle<<"\n";
     return i2cHandle;
 }
@@ -310,16 +318,15 @@ void fill_timestamp()
     std::string line;
     std::getline(file,line);
     timestamp = std::stod(line);
-
     file.close();
     }
 
 }
 
-int main() {
+int main()
+{
     int i2cHandle = setup();
     fill_timestamp();
-    timeStart = millis();
     std::thread th2(readRTCM, i2cHandle);
     std::thread th1(readNMEA, i2cHandle);
     th1.join();
