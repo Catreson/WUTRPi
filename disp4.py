@@ -78,6 +78,7 @@ screen_background_0 = pygame.image.load("/home/catreson/WUTRPi/res/back_0.png").
 screen_background_1 = pygame.image.load("/home/catreson/WUTRPi/res/back_1.png").convert()
 screen_background_2 = pygame.image.load("/home/catreson/WUTRPi/res/back_2.png").convert()
 screen_background_3 = pygame.image.load("/home/catreson/WUTRPi/res/back_3.png").convert()
+screen_mcshow = pygame.image.load("/home/catreson/WUTRPi/res/mcshow.jpg").convert()
 screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
 listen_topic = "bike/display/#"
 
@@ -167,9 +168,9 @@ while running:
 
             if 0 <= finger[1] <= 100:
                 if 700 <= finger[0]:
-                    screen_mode = (screen_mode + 1) % 3
+                    screen_mode = (screen_mode + 1) % 4
                 elif finger[0] <= 100:
-                    screen_mode = (screen_mode - 1) % 3
+                    screen_mode = (screen_mode - 1) % 4
 
             if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                 inversion = inversion * (-1)
@@ -331,6 +332,9 @@ while running:
         pygame.draw.polygon(screen, (40, 40, 40), ((680, 330), (620, 310), (620, 350)))
 
         pygame.draw.rect(screen, (0, 200, 0), pygame.Rect(300, 300, 180, 60))
+
+    elif screen_mode == 3:
+        screen.blit(screen_mcshow, (0, 0))
 
     pygame.display.flip()
     fpsClock.tick(FPS)
