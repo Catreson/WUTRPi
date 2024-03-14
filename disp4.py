@@ -8,7 +8,6 @@ import shutil
 
 os.environ["DISPLAY"] = ":0"
 pygame.init()
-pygame.mouse.set_visible(False)
 
 laptime = 0.0
 delta = 0.0
@@ -67,6 +66,7 @@ font3 = pygame.font.SysFont(None, 60)
 
 FPS = 10
 fpsClock = pygame.time.Clock()
+pygame.mouse.set_visible(False)
 # end of display configuration -------------
 
 
