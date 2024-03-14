@@ -2,10 +2,15 @@ import RPi.GPIO as GPIO
 from common import SHM, MQTT_CLIENT
 import time
 
-led_1 = 10100
+"""led_1 = 10100
 led_2 = 10200
 led_3 = 10300
-led_4 = 10400
+led_4 = 10400"""
+led_1 = 8000
+led_2 = 9000
+led_3 = 9500
+led_4 = 10000
+
 led_flash = 10450
 rev_limiter = 11000
 ptim = 0
