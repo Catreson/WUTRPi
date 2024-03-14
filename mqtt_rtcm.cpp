@@ -261,7 +261,7 @@ void readRTCM(int i2cHandle)
         std::getline(std::cin, line, '\n');  
         for (char c : line)
         {
-            rtcm_bytes.push_back(std::bit_cast<uint8_t>(c));
+            rtcm_bytes.push_back(std::static_cast<uint8_t>(c));
         }
         i2cWrite(rtcm_bytes, i2cHandle);
     }
@@ -276,7 +276,7 @@ void readNMEA(int i2cHandle)
     mqtt::topic top2(cli, TOPIC2, QOS, true);
     try{
         cli.connect()->wait();
-    }0b01111111
+    }
     catch(std::exception){
         std::cerr<<"No client";
     }
