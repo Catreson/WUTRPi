@@ -8,6 +8,7 @@ import shutil
 
 os.environ["DISPLAY"] = ":0"
 pygame.init()
+pygame.mouse.set_visible(False)
 
 laptime = 0.0
 delta = 0.0
