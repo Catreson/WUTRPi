@@ -131,7 +131,7 @@ const uint8_t GPS_EXC_SET[] = {
     0x4E, 0xA9
 };
 
-const * uint8_t commands[] = {
+const uint8_t *commands[] = {
     DISABLE_UART1,
     DISABLE_UART2,
     //DISABLE_USB,
@@ -188,7 +188,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
     std::vector<std::string> msg;
     std::string str;
     std::string even;
-    std::stringstream strim(convert_to_string(reinterpret_cast<*char>(ptr)));
+    std::stringstream strim(convert_to_string(reinterpret_cast<char*>(ptr)));
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
@@ -261,7 +261,7 @@ void readRTCM(int i2cHandle)
         std::getline(std::cin, line, '\n');  
         for (char c : line)
         {
-            rtcm_bytes.push_back(reinterpret_cast<uint8_t>(c));
+            rtcm_bytes.push_back(reinterpret_cast<uint8_t&>(c));
         }
         i2cWrite(rtcm_bytes, i2cHandle);
     }
