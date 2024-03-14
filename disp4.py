@@ -66,7 +66,6 @@ font3 = pygame.font.SysFont(None, 60)
 
 FPS = 10
 fpsClock = pygame.time.Clock()
-pygame.mouse.set_visible(False)
 # end of display configuration -------------
 
 
@@ -82,6 +81,7 @@ screen_background_3 = pygame.image.load("/home/catreson/WUTRPi/res/back_3.png").
 screen_mcshow = pygame.image.load("/home/catreson/WUTRPi/res/mcshow.jpg").convert()
 screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
 listen_topic = "bike/display/#"
+pygame.mouse.set_visible(False)
 
 
 def sec2min(sectime):
