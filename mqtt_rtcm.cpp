@@ -188,7 +188,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
     std::vector<std::string> msg;
     std::string str;
     std::string even;
-    std::stringstream strim(convert_to_string(std::bit_cast<*char>(ptr)));
+    std::stringstream strim(convert_to_string(std::reinterpret_cast<*char>(ptr)));
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
@@ -261,7 +261,7 @@ void readRTCM(int i2cHandle)
         std::getline(std::cin, line, '\n');  
         for (char c : line)
         {
-            rtcm_bytes.push_back(std::static_cast<uint8_t>(c));
+            rtcm_bytes.push_back(std::reinterpret_cast<uint8_t>(c));
         }
         i2cWrite(rtcm_bytes, i2cHandle);
     }
