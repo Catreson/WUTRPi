@@ -27,7 +27,7 @@ class TOFs:
             
     def read_data(self) -> None:
         for tof in self.tofs_list:
-            self.mqtt.send(topic = self.write_topic, event = f'{pyro[0]},{time.time() - self.mqtt.timestam},{pyro[1].readObject1()},bike/sensor/pyro,double')
+            self.mqtt.send(topic = self.write_topic, event = f'{tof[0]},{time.time() - self.mqtt.timestam},{tof[1].read()},bike/sensor/tof,string')
         
 if __name__ == "__main__":
     print("Please no use like that")
