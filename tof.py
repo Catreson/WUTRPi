@@ -17,8 +17,9 @@ class TOFs:
     write_topic = 'bike/sensor/tof'
       
     def __init__(self, tofs_in_use = [['rear_tof', 0x21]], busnum: int = 0, offline: int = 0) -> None:
+        self.tofs_list  = []
         for tof in tofs_in_use:
-            self.tofs_list.append([tof[0], TOF(tof[1], busnum = busnum)])
+            self.tofs_list.append([tof[0], TOF(tof[1], busnum)])
         try:
             self.mqtt = MQTT_CLIENT(client_id = 'pyrometers', offline = offline)
         except:
