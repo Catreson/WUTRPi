@@ -282,21 +282,22 @@ void readNMEA(int i2cHandle)
         std::cerr<<"No client";
     }
     while(true){
-    uint8_t received_bytes[92] = {'$'};
-    uint8_t received_byte;
-    int i = 1;
+        uint8_t received_bytes[92] = {'$'};
+        uint8_t received_byte;
+        int i = 1;
 
-    if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE)
-    {
-        while(read(i2cHandle, &received_byte, 1) == 1 && received_byte != ENDLINE && received_byte > 0x20) {
-            received_byte &= 0b01111111;
-            received_bytes[i] = received_byte;
-            i++;
+        if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE)
+        {
+            cout<<(char)received_byte;
+            while(read(i2cHandle, &received_byte, 1) == 1 && received_byte != ENDLINE && received_byte > 0x20) {
+                received_byte &= 0b01111111;
+                received_bytes[i] = received_byte;
+                i++;
+            }
+            received_bytes[i] = ENDLINE;
+            double stamp = mili() - timestamp;
+            write_to_file(received_bytes, i+1, top1, top2, stamp);
         }
-        received_bytes[i] = ENDLINE;
-        double stamp = mili() - timestamp;
-        write_to_file(received_bytes, i+1, top1, top2, stamp);
-    }
     }
 }
 
