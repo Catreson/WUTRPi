@@ -189,7 +189,7 @@ void write_to_file(uint8_t *ptr, size_t len, mqtt::topic& top1, mqtt::topic& top
     std::string str;
     std::string even;
     std::stringstream strim(convert_to_string(reinterpret_cast<char*>(ptr)));
-    std::cout<<convert_to_string(reinterpret_cast<char*>(ptr));
+    //std::cout<<convert_to_string(reinterpret_cast<char*>(ptr));
     while (getline(strim, str, ','))
         msg.push_back(str);
     try{
@@ -288,7 +288,7 @@ void readNMEA(int i2cHandle)
 
         if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE)
         {
-            std::cout<<(char)received_byte;
+            //std::cout<<(char)received_byte;
             while(read(i2cHandle, &received_byte, 1) == 1 && received_byte != ENDLINE && received_byte > 0x20) {
                 received_byte &= 0b01111111;
                 received_bytes[i] = received_byte;
