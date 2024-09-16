@@ -48,7 +48,7 @@ class SAVE_CSV(metaclass=Singleton):
     def save(self, event):
         self.mqtt_file.write(f'{event}\n')
 
-class SHM(): #metaclass=Singleton):
+class SHM(): 
 
     names_dict = defaultdict(lambda : 16)
 
