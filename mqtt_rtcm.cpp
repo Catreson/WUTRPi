@@ -288,7 +288,7 @@ void readNMEA(int i2cHandle)
 
         if (read(i2cHandle, &received_byte, 1) == 1 && received_byte == NMEA_PREAMBLE)
         {
-            cout<<(char)received_byte;
+            std::cout<<(char)received_byte;
             while(read(i2cHandle, &received_byte, 1) == 1 && received_byte != ENDLINE && received_byte > 0x20) {
                 received_byte &= 0b01111111;
                 received_bytes[i] = received_byte;
