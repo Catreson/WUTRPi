@@ -156,7 +156,7 @@ std::string convert_to_string(char* a)
 void sendConfig(int i2cHandle)
 {
     for (int i = 0; i < sizeof(commands); i++){
-        write(i2cHandle, commands[i], sizeof(commands));
+        write(i2cHandle, commands[i], sizeof(commands[i]));
     }
 }
 
