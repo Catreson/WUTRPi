@@ -86,7 +86,15 @@ class SUSPENSION():
         pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_dict['steer_angle'], potentiometer_length=150)
         steer_angle = self.ch_steer(pot_sa)
 
-        self.eventlist += f'{time.time() - self.mqtit.timestam};{susp_f};{susp_r};{p_brake};{steer_angle}:'
+
+        self.cm.save('susp_f', susp_f)
+        self.cm.save('susp_r', susp_r)
+        self.cm.save('p_brake', p_brake)
+        self.cm.save('steer_angle', steer_angle)
+        even = f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
+        self.mqtit.send(topic=self.write_topic, event=even)
+
+        """self.eventlist += f'{time.time() - self.mqtit.timestam};{susp_f};{susp_r};{p_brake};{steer_angle}:'
         self.index += 1
         if self.index >= 40:
             self.cm.save('susp_f', susp_f)
@@ -97,6 +105,8 @@ class SUSPENSION():
                            event=f"susp,{time.time() - self.mqtit.timestam},{self.eventlist},bike/sensor/susp,string")
             self.eventlist = ""
             self.index = 0
+        """
+
         #self.mqtit.send(topic=self.write_topic, event=even)
 
     def __del__(self):
