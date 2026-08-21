@@ -6,11 +6,7 @@ from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
-    corr_dict = {}
     channelList = [0, 1, 2, 3]
-    val = [0] * 4
-    eventlist = ""
-    index = 0
     write_topic = 'bike/sensor/susp/'
     listen_topic = 'bike/correction/susp'
 
@@ -38,6 +34,10 @@ class SUSPENSION():
         logging.info('Received correction message')
 
     def __init__(self, offline=0):
+        self.corr_dict = {}
+        self.val = [0] * 4
+        self.eventlist = ""
+        self.index = 0
 
         logging.info('Init susp')
         self.ADC = ADS1263.ADS1263()
@@ -63,11 +63,18 @@ class SUSPENSION():
             logging.info('Client connected')
         except:
             sys.exit('No connection to MQTT broker')
-        with open("/home/catreson/WUTRPi/res/correction.csv", "r") as file:
-            for line in file:
-                line = line.strip()
-                dat = line.split(',')
-                self.corr_dict[dat[0]] = float(dat[1])
+        try:
+            with open("/home/catreson/WUTRPi/res/correction.csv", "r") as file:
+                for line in file:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    dat = line.split(',')
+                    if len(dat) < 2:
+                        continue
+                    self.corr_dict[dat[0]] = float(dat[1])
+        except FileNotFoundError:
+            logging.warning('No correction.csv found, starting with empty corrections')
 
     def ch_shock(self, potentiometer_length):
         return 0.0030 * pow(potentiometer_length, 2) - 1.6297 * potentiometer_length + 105.3946
@@ -79,11 +86,11 @@ class SUSPENSION():
 
     def read_data(self):
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
-        susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict['susp_f']), potentiometer_length=150)
-        pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_dict['susp_r']), potentiometer_length=75)
+        susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict.get('susp_f', 0)), potentiometer_length=150)
+        pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_dict.get('susp_r', 0)), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
-        p_brake = self.potentiometer(analog_value=self.val[2] - self.corr_dict['p_brake'], potentiometer_length=227)
-        pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_dict['steer_angle'], potentiometer_length=150)
+        p_brake = self.potentiometer(analog_value=self.val[2] - self.corr_dict.get('p_brake', 0), potentiometer_length=227)
+        pot_sa = self.potentiometer(analog_value=self.val[3] - self.corr_dict.get('steer_angle', 0), potentiometer_length=150)
         steer_angle = self.ch_steer(pot_sa)
 
 

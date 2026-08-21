@@ -18,7 +18,7 @@ while True:
             #print(line)
             try:
                 tim = float(lin[1])
-                mqtit.send(topic = lin[3], event = f'lin[0],{float(lin[1]) + ptime},lin[2],lin[3],lin[4]')
+                mqtit.send(topic = lin[3], event = f'{lin[0]},{float(lin[1]) + ptime},{lin[2]},{lin[3]},{lin[4]}')
             except:
                 print('Invalid')
             try:

@@ -25,11 +25,11 @@ class Melexis:
         return temp
 
 class PYROMETERS:
-    
+
     write_topic = 'bike/sensor/pyro'
-    pyro_list = []
-      
+
     def __init__(self, pyrometers_in_use = [['pyro_rc', 0x5a],['pyro_rr', 0x6a],['pyro_rl', 0x7a]], busnum = 0, offline = 0):
+        self.pyro_list = []
         for pyrometer in pyrometers_in_use:
             self.pyro_list.append([pyrometer[0], Melexis(pyrometer[1], busnum = busnum)])
         try:
@@ -39,7 +39,12 @@ class PYROMETERS:
             
     def read_data(self):
         for pyro in self.pyro_list:
-            self.mqtt.send(topic = self.write_topic, event = f'{pyro[0]},{time.time() - self.mqtt.timestam},{pyro[1].readObject1()},bike/sensor/pyro,double')
+            try:
+                temperature = pyro[1].readObject1()
+            except OSError as exc:
+                logging.warning(f'Pyrometer {pyro[0]} read failed: {exc}')
+                continue
+            self.mqtt.send(topic = self.write_topic, event = f'{pyro[0]},{time.time() - self.mqtt.timestam},{temperature},bike/sensor/pyro,double')
         
 if __name__ == "__main__":
     print("Please no use like that")

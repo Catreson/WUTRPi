@@ -5,6 +5,9 @@ from rs232 import ECU
 from susp import SUSPENSION
 from pyro import PYROMETERS
 from gyro import GIROSCOPES
+from gps import GPS
+from leds import run_leds
+from disp4 import run_display
 from common import READ_TRIGGER
 
 pyro_list = [['pyro_fc', 0x5a],
@@ -38,12 +41,28 @@ def pyro_thread():
     pyro = PYROMETERS(pyrometers_in_use = pyro_list, busnum = 0, offline = offline)
     pyro_trigger = READ_TRIGGER(frequency = 1, func = pyro.read_data)
 
+def gps_thread():
+    global offline
+    gps = GPS(busnum = 1, address = 0x42, offline = offline)
+    gps.run()
+
+def leds_thread():
+    global offline
+    run_leds(offline = offline)
+
+def display_thread():
+    global offline
+    run_display(offline = offline)
+
 
 proces_dict = {
   'ecu_proc': ECU_thread,
   'susp_proc': susp_thread,
   'giro_proc': giro_thread,
-  'pyro_proc': pyro_thread}
+  'pyro_proc': pyro_thread,
+  'gps_proc': gps_thread,
+  'leds_proc': leds_thread,
+  'display_proc': display_thread}
 
 if __name__ == "__main__":
     P = []
@@ -58,7 +77,7 @@ if __name__ == "__main__":
             logging.warning(f'{proces_name} not started')
 
     while True:
-        for (nam, proces) in P:
+        for (nam, proces) in list(P):
             if proces.is_alive():
                 logging.info(f'{nam} is alive')
             else:
@@ -67,7 +86,7 @@ if __name__ == "__main__":
                 p = Process(target = proces_dict[nam], name = nam)
                 p.start()
                 logging.warning(f'{nam} is ressurected')
-                P.append(p)
+                P.append((nam, p))
         time.sleep(10)
                 
     

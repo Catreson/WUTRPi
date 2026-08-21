@@ -1,3 +1,4 @@
 /res/correction.csv
 settings.yaml
 credentials.json
+deploy/ntrip_credentials.sh

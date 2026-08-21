@@ -6,12 +6,12 @@ from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 class GIROSCOPES:
 
-    address = 0x68   
     write_topic = 'bike/sensor/imu'
-    gyro_list = []
-    eventlist = ""
-    index = 0
+
     def __init__(self, address = [0x68], bus = 1, offline = 0):
+        self.gyro_list = []
+        self.eventlist = ""
+        self.index = 0
 
         for gyro_address in address:
             try:

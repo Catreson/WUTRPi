@@ -67,10 +67,18 @@ class SHM():
             self.disp_shm = shared_memory.SharedMemory(create=True, size=self.a.nbytes, name='disp_shm')
             self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
             self.b[:] = self.a[:]
-        except:
+        except FileExistsError:
             self.disp_shm = shared_memory.SharedMemory(name='disp_shm')
-            resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
-            self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+            if self.disp_shm.size != self.a.nbytes:
+                logging.warning('Stale disp_shm size does not match sensors.csv, recreating')
+                self.disp_shm.close()
+                self.disp_shm.unlink()
+                self.disp_shm = shared_memory.SharedMemory(create=True, size=self.a.nbytes, name='disp_shm')
+                self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+                self.b[:] = self.a[:]
+            else:
+                resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
+                self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
         print('SHM init complete')
 
     def save(self, name, var):
@@ -99,6 +107,7 @@ class MQTT_CLIENT():
         logging.info('Creating client')
         self.client = mqtt.Client(client_id, protocol = mqtt.MQTTv311)
         self.client.connect('localhost')
+        self.client.loop_start()
         logging.info('Connceted to localhost')
         self.is_offline = offline
         if offline == 1:
@@ -117,8 +126,7 @@ class MQTT_CLIENT():
         self.client.subscribe(topic)
         print('Subscribed, assigning func')
         self.client.on_message = func
-        print('Assigned, looping')
-        self.client.loop_start()
+        print('Assigned')
         
 if __name__ == "__main__":
     print("No use like that")

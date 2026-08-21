@@ -60,7 +60,7 @@ class ECU():
     write_topic = 'bike/sensor/ecu'
     
     def __init__(self, port = "/dev/ttyAMA1", baudrate = 19200, offline = 0):
-        self.ser = serial.Serial(port, baudrate)
+        self.ser = serial.Serial(port, baudrate, timeout = 1)
         try:
             self.cm = SHM()
         except:
@@ -75,26 +75,34 @@ class ECU():
         for sensor in self.sensor_list:
             self.sensor_dict[sensor[0]] = sensor
 
-    def synchronize_read(self):
-        stri=binascii.b2a_hex(self.ser.read(size=1)).decode('utf-8')
-        while stri != "a3":
-	        stri=binascii.b2a_hex(self.ser.read(size=1)).decode('utf-8')
-        self.ser.read(size=3)
-        logging.info('Synchronized input')
+    def synchronize_read(self, max_attempts = 20):
+        for _ in range(max_attempts):
+            data = self.ser.read(size=1)
+            if not data:
+                continue
+            if binascii.b2a_hex(data).decode('utf-8') == "a3":
+                self.ser.read(size=3)
+                logging.info('Synchronized input')
+                return
+        logging.warning('ECU synchronization timed out, will retry next cycle')
 
     def reading_loop(self):
         while True:
-            kanal = int(binascii.b2a_hex(self.ser.read(size=1)),16)
-            self.ser.read(size=1)
-            value = int(binascii.b2a_hex(self.ser.read(size=2)),16)
-            self.ser.read(size=1)
-            sensor = self.sensor_dict[kanal]
-            calc = sensor[3](self, x = value)
-            self.cm.save(name = sensor[1], var = calc)
-            #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
-            self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
-            if time.time() - self.succes_read > 4.5:
-                self.synchronize_read()
+            try:
+                kanal = int(binascii.b2a_hex(self.ser.read(size=1)),16)
+                self.ser.read(size=1)
+                value = int(binascii.b2a_hex(self.ser.read(size=2)),16)
+                self.ser.read(size=1)
+                sensor = self.sensor_dict[kanal]
+                calc = sensor[3](self, x = value)
+                self.cm.save(name = sensor[1], var = calc)
+                #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
+                self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
+                if time.time() - self.succes_read > 4.5:
+                    self.synchronize_read()
+            except (serial.SerialException, ValueError, IndexError) as exc:
+                logging.warning(f'ECU read error: {exc}')
+                time.sleep(0.1)
             
 if __name__ == "__main__":
     eku = ECU()
