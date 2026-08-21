@@ -13,18 +13,63 @@ LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 
 
+def _git_remote_url():
+    try:
+        result = subprocess.run(['git', '-C', REPO_DIR, 'remote', 'get-url', 'origin'],
+                                 capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return None
+
+
+def _git_branch_name():
+    try:
+        result = subprocess.run(['git', '-C', REPO_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'],
+                                 capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return 'test'
+
+
+def _reclone_fresh():
+    """Local repo looks corrupt (e.g. from a power-loss during a write on the SD card) -
+    throw it away and clone a fresh copy instead of trying to repair it in place."""
+    url = _git_remote_url()
+    if not url:
+        return 'Repo unreadable and remote URL unknown - needs manual fix'
+    branch = _git_branch_name()
+    tmp_dir = f'{REPO_DIR}_freshclone'
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    clone = subprocess.run(['git', 'clone', '--branch', branch, '--single-branch', url, tmp_dir],
+                            capture_output=True, text=True, timeout=120)
+    if clone.returncode != 0:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return f'Re-clone failed: {clone.stderr.strip()[:60]}'
+    try:
+        shutil.rmtree(REPO_DIR)
+        shutil.move(tmp_dir, REPO_DIR)
+    except OSError as exc:
+        return f'Failed to swap in fresh clone: {exc}'
+    return None
+
+
 def run_update():
     try:
         fetch = subprocess.run(['git', '-C', REPO_DIR, 'fetch', 'origin'], capture_output=True, text=True, timeout=30)
-        if fetch.returncode != 0:
-            return f'git fetch failed: {fetch.stderr.strip()[:60]}'
-        branch = subprocess.run(['git', '-C', REPO_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'],
-                                 capture_output=True, text=True, timeout=10)
-        branch_name = branch.stdout.strip() or 'main'
-        reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
-                                capture_output=True, text=True, timeout=30)
-        if reset.returncode != 0:
-            return f'git reset failed: {reset.stderr.strip()[:60]}'
+        synced = False
+        if fetch.returncode == 0:
+            branch_name = _git_branch_name()
+            reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
+                                    capture_output=True, text=True, timeout=30)
+            synced = reset.returncode == 0
+        if not synced:
+            error = _reclone_fresh()
+            if error:
+                return error
         install = subprocess.run(['sudo', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
         if install.returncode != 0:
             return f'rc.local install failed: {install.stderr.strip()[:60]}'
