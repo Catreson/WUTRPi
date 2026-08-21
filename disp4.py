@@ -15,9 +15,16 @@ DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 
 def run_update():
     try:
-        pull = subprocess.run(['git', '-C', REPO_DIR, 'pull'], capture_output=True, text=True, timeout=30)
-        if pull.returncode != 0:
-            return f'git pull failed: {pull.stderr.strip()[:60]}'
+        fetch = subprocess.run(['git', '-C', REPO_DIR, 'fetch', 'origin'], capture_output=True, text=True, timeout=30)
+        if fetch.returncode != 0:
+            return f'git fetch failed: {fetch.stderr.strip()[:60]}'
+        branch = subprocess.run(['git', '-C', REPO_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'],
+                                 capture_output=True, text=True, timeout=10)
+        branch_name = branch.stdout.strip() or 'main'
+        reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
+                                capture_output=True, text=True, timeout=30)
+        if reset.returncode != 0:
+            return f'git reset failed: {reset.stderr.strip()[:60]}'
         install = subprocess.run(['sudo', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
         if install.returncode != 0:
             return f'rc.local install failed: {install.stderr.strip()[:60]}'
