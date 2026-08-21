@@ -1,6 +1,9 @@
+import os
 import time
 import logging
 from multiprocessing import Process
+
+DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 
 pyro_list = [['pyro_fc', 0x5a],
   ['pyro_fr', 0x6a],
@@ -67,6 +70,9 @@ proces_dict = {
   'display_proc': display_thread}
 
 if __name__ == "__main__":
+    if os.path.exists(DISPLAY_STOP_FLAG):
+        os.remove(DISPLAY_STOP_FLAG)
+
     P = []
     ind = 0
     for proces_name in proces_dict.keys():
@@ -82,6 +88,9 @@ if __name__ == "__main__":
         for (nam, proces) in list(P):
             if proces.is_alive():
                 logging.info(f'{nam} is alive')
+            elif nam == 'display_proc' and os.path.exists(DISPLAY_STOP_FLAG):
+                logging.info('display_proc intentionally stopped, not resurrecting')
+                P.remove((nam, proces))
             else:
                 logging.warning(f'{nam} is dead')
                 P.remove((nam, proces))

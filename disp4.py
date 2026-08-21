@@ -5,6 +5,37 @@ from common import SHM, MQTT_CLIENT
 import logging
 import sys
 import shutil
+import subprocess
+
+REPO_DIR = '/home/catreson/WUTRPi'
+INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
+LX_SCRIPT = '/home/catreson/lx.sh'
+DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
+
+
+def run_update():
+    try:
+        pull = subprocess.run(['git', '-C', REPO_DIR, 'pull'], capture_output=True, text=True, timeout=30)
+        if pull.returncode != 0:
+            return f'git pull failed: {pull.stderr.strip()[:60]}'
+        install = subprocess.run(['sudo', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
+        if install.returncode != 0:
+            return f'rc.local install failed: {install.stderr.strip()[:60]}'
+        return 'Updated OK'
+    except Exception as exc:
+        return f'Update error: {exc}'[:80]
+
+
+def run_close():
+    try:
+        with open(DISPLAY_STOP_FLAG, 'w') as f:
+            f.write('stopped')
+    except OSError as exc:
+        logging.warning(f'Failed to write display stop flag: {exc}')
+    try:
+        subprocess.Popen([LX_SCRIPT], start_new_session=True)
+    except OSError as exc:
+        logging.warning(f'Failed to launch lx.sh: {exc}')
 
 
 def run_display(offline=0):
@@ -44,6 +75,9 @@ def run_display(offline=0):
     st_count = 0
     pb_count = 0
     splt_count = 0
+    update_count = 0
+    close_count = 0
+    update_status = ''
 
     #splits names fetch
     split_dict = {}
@@ -170,9 +204,9 @@ def run_display(offline=0):
 
                 if 0 <= finger[1] <= 100:
                     if 700 <= finger[0]:
-                        screen_mode = (screen_mode + 1) % 4
+                        screen_mode = (screen_mode + 1) % 5
                     elif finger[0] <= 100:
-                        screen_mode = (screen_mode - 1) % 4
+                        screen_mode = (screen_mode - 1) % 5
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
@@ -222,6 +256,19 @@ def run_display(offline=0):
                                 pygame.display.flip()
                                 splt_count = 0
                                 time.sleep(3)
+
+                elif screen_mode == 4:
+                    if 100 <= finger[0] <= 700:
+                        if 100 <= finger[1] <= 280:
+                            update_count = update_count + 1
+                            if update_count > 5:
+                                update_status = run_update()
+                                update_count = 0
+                        elif 300 <= finger[1] <= 460:
+                            close_count = close_count + 1
+                            if close_count > 5:
+                                run_close()
+                                running = False
 
         if screen_mode == 0:
             if race_mode == 0:
@@ -343,6 +390,21 @@ def run_display(offline=0):
 
         elif screen_mode == 3:
             screen.blit(screen_mcshow, (0, 0))
+
+        elif screen_mode == 4:
+            screen.fill((20, 20, 20))
+
+            pygame.draw.rect(screen, (60, 60, 60), pygame.Rect(100, 100, 600, 180))
+            img = font2.render('UPDATE', True, (255, 255, 255))
+            screen.blit(img, (260, 160))
+
+            pygame.draw.rect(screen, (90, 30, 30), pygame.Rect(100, 300, 600, 160))
+            img = font2.render('CLOSE', True, (255, 255, 255))
+            screen.blit(img, (280, 350))
+
+            if update_status:
+                img = font3.render(update_status, True, (255, 255, 0))
+                screen.blit(img, (20, 20))
 
         pygame.display.flip()
         fpsClock.tick(FPS)
