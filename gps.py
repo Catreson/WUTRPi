@@ -1,9 +1,13 @@
+import os
 import sys
 import time
 import logging
 import threading
+import subprocess
 from smbus2 import SMBus, i2c_msg
 from common import MQTT_CLIENT, READ_TRIGGER
+
+STR2STR_BIN = 'str2str'
 
 # UBX-CFG-PRT: disable UART1 / UART2 / USB / SPI as an I/O port
 DISABLE_UART1 = bytes([0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08,
@@ -64,8 +68,9 @@ class GPS:
     rtk_topic = 'bike/display/rtk'
     listen_topic = 'bike/correction/gps'
 
-    def __init__(self, busnum=1, address=0x42, offline=0):
+    def __init__(self, busnum=1, address=0x42, offline=0, ntrip_url=None):
         self.address = address
+        self.ntrip_url = ntrip_url if ntrip_url is not None else os.environ.get('NTRIP_URL')
         try:
             self.bus = SMBus(busnum)
         except FileNotFoundError:
@@ -208,25 +213,44 @@ class GPS:
                     if len(self._nmea_buffer) > 200:
                         self._nmea_buffer.clear()
 
+    def _start_str2str(self):
+        try:
+            return subprocess.Popen([STR2STR_BIN, '-in', self.ntrip_url], stdout=subprocess.PIPE)
+        except OSError as exc:
+            logging.error(f'Failed to start str2str: {exc}')
+            return None
+
     def forward_rtcm_loop(self):
-        stdin = sys.stdin.buffer
+        if not self.ntrip_url:
+            logging.warning('NTRIP_URL not set, GPS will run without RTCM corrections')
+            return
         while True:
-            preamble = stdin.read(1)
-            if not preamble:
-                time.sleep(0.1)
+            proc = self._start_str2str()
+            if proc is None:
+                time.sleep(5)
                 continue
-            if preamble[0] != RTCM3_PREAMBLE:
-                continue
-            header = stdin.read(2)
-            if len(header) < 2:
-                continue
-            length = ((header[0] & 0x03) << 8) | header[1]
-            payload = stdin.read(length)
-            crc = stdin.read(3)
-            if len(payload) < length or len(crc) < 3:
-                logging.warning('Incomplete RTCM3 frame, dropping')
-                continue
-            self._write_bytes(preamble + header + payload + crc)
+            stream = proc.stdout
+            while True:
+                if proc.poll() is not None:
+                    logging.warning('str2str exited unexpectedly, restarting it')
+                    break
+                preamble = stream.read(1)
+                if not preamble:
+                    time.sleep(0.1)
+                    continue
+                if preamble[0] != RTCM3_PREAMBLE:
+                    continue
+                header = stream.read(2)
+                if len(header) < 2:
+                    continue
+                length = ((header[0] & 0x03) << 8) | header[1]
+                payload = stream.read(length)
+                crc = stream.read(3)
+                if len(payload) < length or len(crc) < 3:
+                    logging.warning('Incomplete RTCM3 frame, dropping')
+                    continue
+                self._write_bytes(preamble + header + payload + crc)
+            time.sleep(2)
 
     def run(self):
         rtcm_thread = threading.Thread(target=self.forward_rtcm_loop, daemon=True)

@@ -23,8 +23,9 @@ su catreson -c 'echo $(date +%s) &> /home/catreson/skrypty/timestamp.txt' &
 
 #systemctl stop serial-getty@ttyS0.service &
 
-# srtk (C++) is replaced by gps.py, run as gps_proc inside main.py - the RTCM
-# stream from str2str is now piped straight into main.py's stdin below
+# srtk (C++) is replaced by gps.py, run as gps_proc inside main.py - gps.py now
+# starts and supervises str2str itself (via NTRIP_URL below), so it can restart
+# it if the connection drops instead of main.py's stdin silently going stale
 #su catreson -c 'str2str -in ntrip://mklisiewicz:wsrtsimr@system.asgeupos.pl:8086/RADM_RTCM_3_2 | /home/catreson/WUTRPi/srtk &> /home/catreson/logs/srtk_log$(date -u +\%Y\%m\%d\%H\%M\%S).txt' &
 
 #su catreson -c 'python3 /home/catreson/WUTRPi/main.py &> /home/catreson/logs/main_log.txt' &
@@ -34,7 +35,7 @@ su catreson -c 'echo $(date +%s) &> /home/catreson/skrypty/timestamp.txt' &
 
 #su catreson -c 'python3 /home/catreson/skrypty/disp4.py --DISPLAY=:0 > /home/catreson/logs/display_log.txt' &
 
-su catreson -c 'str2str -in ntrip://${NTRIP_USER}:${NTRIP_PASS}@system.asgeupos.pl:8086/${NTRIP_MOUNTPOINT} | python3 /home/catreson/WUTRPi/main.py &> /home/catreson/logs/main_log.txt' &
+su catreson -c 'NTRIP_URL="ntrip://${NTRIP_USER}:${NTRIP_PASS}@system.asgeupos.pl:8086/${NTRIP_MOUNTPOINT}" python3 /home/catreson/WUTRPi/main.py &> /home/catreson/logs/main_log.txt' &
 
 su catreson -c 'python3 /home/catreson/WSRT/PiProjects/SpeedSensor/rpm &> /home/catreson/logs/rpm_log.txt' &
 

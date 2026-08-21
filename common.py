@@ -48,11 +48,10 @@ class SAVE_CSV(metaclass=Singleton):
     def save(self, event):
         self.mqtt_file.write(f'{event}\n')
 
-class SHM(): 
-
-    names_dict = defaultdict(lambda : 16)
+class SHM():
 
     def fill_names_dict(self):
+        self.names_dict = defaultdict(lambda: self.names_dict.get('err', 0))
         with open('/home/catreson/WUTRPi/res/sensors.csv', 'r') as filet:
             sensor_number = 0
             for sensor in filet:
@@ -82,9 +81,13 @@ class SHM():
         print('SHM init complete')
 
     def save(self, name, var):
+        if name not in self.names_dict:
+            logging.warning(f'Unknown SHM sensor name "{name}", writing to err slot')
         self.b[self.names_dict[name]] = var
 
-    def read(self, name): 
+    def read(self, name):
+        if name not in self.names_dict:
+            logging.warning(f'Unknown SHM sensor name "{name}", reading err slot')
         return self.b[self.names_dict[name]]
             
     def read_bulk(self):

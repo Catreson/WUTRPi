@@ -36,8 +36,6 @@ class ECU():
         y=x/100
         return y
 
-    succes_read = time.time()
-    
     sensor_list=[[1,'rpm',10,mbar],
     [5,'wheel_f_ecu',10,speed],
     [9,'p_oil',5,bar],
@@ -56,10 +54,13 @@ class ECU():
     
     sensor_dict = defaultdict(lambda : [666, 'err', 0, lambda s, x: 0])
     
-    last_temp = 0    
+    last_temp = 0
     write_topic = 'bike/sensor/ecu'
-    
+    water_topic = 'bike/display/water'
+
     def __init__(self, port = "/dev/ttyAMA1", baudrate = 19200, offline = 0):
+        self.succes_read = time.time()
+        self.water_err = False
         self.ser = serial.Serial(port, baudrate, timeout = 1)
         try:
             self.cm = SHM()
@@ -98,7 +99,11 @@ class ECU():
                 self.cm.save(name = sensor[1], var = calc)
                 #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
                 self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
-                if time.time() - self.succes_read > 4.5:
+                stale = time.time() - self.succes_read > 4.5
+                if stale != self.water_err:
+                    self.water_err = stale
+                    self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
+                if stale:
                     self.synchronize_read()
             except (serial.SerialException, ValueError, IndexError) as exc:
                 logging.warning(f'ECU read error: {exc}')

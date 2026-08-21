@@ -16,8 +16,10 @@ def run_display(offline=0):
     lapno = 0
     rtk_flag = (255, 0, 0)
     engine_mode = "A"
+    water_err = False
 
     engine_mode_dict = { 'P' : (240, 240, 0), 'L' : (0, 240, 0), 'A' : (240, 0, 0)}
+    err_col = (240, 0, 0)
 
     # display configuration -------------------
     display_resolution = [800, 480]
@@ -96,7 +98,7 @@ def run_display(offline=0):
 
 
     def on_message(client, userdata, message):
-        nonlocal laptime, lapno, delta, rtk_flag, engine_mode, race_mode
+        nonlocal laptime, lapno, delta, rtk_flag, engine_mode, race_mode, water_err
         mesenge = str(message.payload.decode("utf-8"))
         print("message received ", mesenge)
         print("message topic=", message.topic)
@@ -124,6 +126,8 @@ def run_display(offline=0):
                 race_mode = 1
             else:
                 race_mode = 0
+        elif message.topic == 'bike/display/water':
+            water_err = (mesenge == 'ERR')
         print('mqtt')
 
 
@@ -235,7 +239,10 @@ def run_display(offline=0):
                 img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
                 screen.blit(img, (off1 + 665, offtop0 - 10))
 
-                img = font3.render("RTK", True, rtk_flag) # rtk indicator
+                if water_err:
+                    img = font3.render("ERR", True, err_col) # water temp read unavailable
+                else:
+                    img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
                 img = font1.render(engine_mode, True, engine_mode_dict.get(engine_mode, cfont0))
@@ -261,7 +268,10 @@ def run_display(offline=0):
                 img = font3.render("%.2f" %data1[7], True, cfont0) # lambda
                 screen.blit(img, (off1 + 665, offtop0 - 10))
 
-                img = font3.render("RTK", True, rtk_flag) # rtk indicator
+                if water_err:
+                    img = font3.render("ERR", True, err_col) # water temp read unavailable
+                else:
+                    img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
                 img = font1.render(engine_mode, True, engine_mode_dict.get(engine_mode, cfont0))

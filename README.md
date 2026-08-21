@@ -43,10 +43,10 @@ SAS ESP from our sponsor SAS Institute\
 `main.py` is the single entry point: it starts every module (ecu, susp, giro, pyro, gps, leds, display) as a supervised child process and restarts any of them that crash. `rc.local` (or whatever starts the software on boot) should launch only:
 
 ```
-str2str <ntrip options> | python3 /home/catreson/WUTRPi/main.py
+NTRIP_URL="ntrip://user:pass@host:port/mountpoint" python3 /home/catreson/WUTRPi/main.py
 ```
 
-The `str2str` pipe is only needed for the GPS RTCM correction stream; `main.py` will still start and run every other module fine without it.
+`gps.py` (`gps_proc`) starts and supervises `str2str` itself using `NTRIP_URL`, restarting it if the connection drops. `main.py` will still start and run every other module fine without `NTRIP_URL` set.
 
 `/etc/rc.local` on the Pi is generated from [deploy/rc.local.template](deploy/rc.local.template), which keeps the real ntrip password out of git. To (re)install it on the Pi:
 ```

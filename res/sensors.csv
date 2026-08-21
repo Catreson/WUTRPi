@@ -15,4 +15,8 @@ gear
 busp_f
 busp_r
 steer_angle
+p_oil
+air_t
+egt
+t_fuel
 err
