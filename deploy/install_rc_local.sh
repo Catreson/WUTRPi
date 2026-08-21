@@ -24,7 +24,22 @@ if ! command -v envsubst >/dev/null 2>&1; then
     exit 1
 fi
 
+if [ ! -f "$SCRIPT_DIR/rc.local.template" ]; then
+    echo "Missing $SCRIPT_DIR/rc.local.template" >&2
+    exit 1
+fi
+
+TMP_FILE="$(mktemp)"
+trap 'rm -f "$TMP_FILE"' EXIT
+
 export NTRIP_USER NTRIP_PASS NTRIP_MOUNTPOINT
-envsubst '${NTRIP_USER} ${NTRIP_PASS} ${NTRIP_MOUNTPOINT}' < "$SCRIPT_DIR/rc.local.template" > /etc/rc.local
-chmod +x /etc/rc.local
+envsubst '${NTRIP_USER} ${NTRIP_PASS} ${NTRIP_MOUNTPOINT}' < "$SCRIPT_DIR/rc.local.template" > "$TMP_FILE"
+
+if [ ! -s "$TMP_FILE" ] || ! head -c 2 "$TMP_FILE" | grep -q '^#!'; then
+    echo "Rendered rc.local looks invalid (empty or missing shebang) - leaving /etc/rc.local untouched" >&2
+    exit 1
+fi
+
+chmod +x "$TMP_FILE"
+mv "$TMP_FILE" /etc/rc.local
 echo "Installed /etc/rc.local"
