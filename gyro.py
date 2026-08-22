@@ -51,6 +51,12 @@ class GIROSCOPES:
             try:
                 accel1_data = gyro.get_accel_data(g = True)
                 gyro1_data = gyro.get_gyro_data()
+                self.cm.save(f'imu{i}_ax', accel1_data['x'])
+                self.cm.save(f'imu{i}_ay', accel1_data['y'])
+                self.cm.save(f'imu{i}_az', accel1_data['z'])
+                self.cm.save(f'imu{i}_gx', gyro1_data['x'])
+                self.cm.save(f'imu{i}_gy', gyro1_data['y'])
+                self.cm.save(f'imu{i}_gz', gyro1_data['z'])
                 self.eventlist += f"gyro{i};{time.time() - self.mqtt.timestam};{accel1_data['x']};{accel1_data['y']};{accel1_data['z']};{gyro1_data['x']};{gyro1_data['y']};{gyro1_data['z']}:"
             except:
                 print("err1")

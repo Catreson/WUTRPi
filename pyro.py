@@ -1,6 +1,6 @@
 import Adafruit_GPIO.I2C as I2C
 import time
-from common import MQTT_CLIENT, READ_TRIGGER
+from common import MQTT_CLIENT, SHM, READ_TRIGGER
 import logging
 #I2C.require_repeated_start()
 
@@ -33,10 +33,14 @@ class PYROMETERS:
         for pyrometer in pyrometers_in_use:
             self.pyro_list.append([pyrometer[0], Melexis(pyrometer[1], busnum = busnum)])
         try:
+            self.cm = SHM()
+        except:
+            logging.error('No shared memory access')
+        try:
             self.mqtt = MQTT_CLIENT(client_id = 'pyrometers', offline = offline)
         except:
             logging.error('No connection to MQTT broker')
-            
+
     def read_data(self):
         for pyro in self.pyro_list:
             try:
@@ -44,6 +48,7 @@ class PYROMETERS:
             except OSError as exc:
                 logging.warning(f'Pyrometer {pyro[0]} read failed: {exc}')
                 continue
+            self.cm.save(pyro[0], temperature)
             self.mqtt.send(topic = self.write_topic, event = f'{pyro[0]},{time.time() - self.mqtt.timestam},{temperature},bike/sensor/pyro,double')
         
 if __name__ == "__main__":

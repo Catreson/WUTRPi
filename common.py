@@ -37,16 +37,13 @@ class READ_TRIGGER():
 
 class SAVE_CSV(metaclass=Singleton):
 
-    mqtt_file = None 
-    
-    def __init__(self, path = '/home/catreson/dane_esp_write/mqtt_csv{filet}', filename = 'mqtt_csv{tim}.csv'):
-        filename.format(tim = time.time())
-        path.format(filet = filename)
-        patho = path + str(round(time.time(),0)) + '.csv'
-        self.mqtt_file = open(patho, 'w')
-        
+    def __init__(self, client_id = 'mqtt', path = '/home/catreson/dane_esp_write/'):
+        filename = f'{client_id}_csv_{round(time.time())}.csv'
+        self.mqtt_file = open(f'{path}{filename}', 'w')
+
     def save(self, event):
         self.mqtt_file.write(f'{event}\n')
+        self.mqtt_file.flush()
 
 class SHM():
 
@@ -96,16 +93,7 @@ class SHM():
 class MQTT_CLIENT():
 
     timestam = 0
-    def send_mqtt(self, topic, event):
-        self.client.publish(topic, event)
-    
-    def send_file(self, topic, event):
-        self.offline_file.save(event)
-        
-    save_mode = {
-      0 : send_mqtt,
-      1 : send_file}
-      
+
     def __init__(self, client_id, offline = 0):
         logging.info('Creating client')
         self.client = mqtt.Client(client_id, protocol = mqtt.MQTTv311)
@@ -114,16 +102,19 @@ class MQTT_CLIENT():
         logging.info('Connceted to localhost')
         self.is_offline = offline
         if offline == 1:
-            self.offline_file = SAVE_CSV()
+            self.offline_file = SAVE_CSV(client_id)
         with open('/home/catreson/skrypty/timestamp.txt','r') as filet:
             tmp = filet.readline()
             tmp.strip()
             self.timestam = float(tmp)
 
-        
     def send(self, topic, event):
-        self.save_mode[self.is_offline](self, topic = topic, event = event)
-           
+        if self.is_offline == 1:
+            self.offline_file.save(f'{topic},{event}')
+        else:
+            self.client.publish(topic, event)
+
+
     def subscribe(self, topic, func):
         print('Subscribing')
         self.client.subscribe(topic)

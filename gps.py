@@ -5,7 +5,7 @@ import logging
 import threading
 import subprocess
 from smbus2 import SMBus, i2c_msg
-from common import MQTT_CLIENT, READ_TRIGGER
+from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
 STR2STR_BIN = 'str2str'
 
@@ -76,6 +76,11 @@ class GPS:
         except FileNotFoundError:
             sys.exit(f'No I2C bus {busnum} available')
         self._send_config()
+
+        try:
+            self.cm = SHM()
+        except Exception:
+            logging.error('No shared memory access')
 
         try:
             self.mqtt = MQTT_CLIENT(client_id='gps', offline=offline)
@@ -156,6 +161,13 @@ class GPS:
         stamp = time.time() - self.mqtt.timestam
         event = f'gps,{stamp},{lon} {lat} {speed_kmh} {course} {self.hdop} {self.rtk_flag},bike/sensor/gps,string'
         self.mqtt.send(topic=self.write_topic, event=event)
+        self.cm.save('gps_lat', lat)
+        self.cm.save('gps_lon', lon)
+        self.cm.save('gps_speed', speed_kmh)
+        try:
+            self.cm.save('gps_course', float(course))
+        except ValueError:
+            pass
 
     def _handle_gns(self, fields):
         if len(fields) < 9:
@@ -170,6 +182,8 @@ class GPS:
         except ValueError:
             self.hdop = 0.0
         self.rtk_flag = 1 if 'R' in mode else 0
+        self.cm.save('gps_hdop', self.hdop)
+        self.cm.save('gps_rtk', self.rtk_flag)
         self._gngns_counter += 1
         if self._gngns_counter >= 100:
             self.mqtt.send(topic=self.rtk_topic, event=str(self.rtk_flag))

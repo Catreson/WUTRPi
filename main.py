@@ -60,6 +60,12 @@ def display_thread():
     from disp4 import run_display
     run_display(offline = offline)
 
+def logger_thread():
+    from logger import LOGGER
+    from common import READ_TRIGGER
+    logger = LOGGER()
+    logger_trigger = READ_TRIGGER(frequency = 200, func = logger.log_row)
+
 
 proces_dict = {
   'ecu_proc': ECU_thread,
@@ -68,6 +74,7 @@ proces_dict = {
   'pyro_proc': pyro_thread,
   'gps_proc': gps_thread,
   'leds_proc': leds_thread,
+  'logger_proc': logger_thread,
   'display_proc': display_thread}
 
 if __name__ == "__main__":
