@@ -12,7 +12,6 @@ INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
 LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
-ENGINE_MODE_NAMES = {0: 'A', 1: 'P', 2: 'L'}
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
 
 
@@ -245,7 +244,6 @@ def run_display(offline=0):
     data1 = cm.read_bulk()
     idx_rtk = cm.names_dict['rtk_flag']
     idx_water = cm.names_dict['water_err']
-    idx_engine = cm.names_dict['engine_mode']
 
     try:
         print('MQTT init')
@@ -273,8 +271,8 @@ def run_display(offline=0):
     while running:
         rtk_flag = (0, 240, 0) if data1[idx_rtk] else (240, 0, 0)
         water_err = bool(data1[idx_water])
-        engine_mode = ENGINE_MODE_NAMES.get(int(data1[idx_engine]), 'A')
-        race_mode = 1 if engine_mode == 'P' else 0
+        engine_mode = 'A'
+        race_mode = 0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
