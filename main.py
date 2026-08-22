@@ -32,7 +32,7 @@ def giro_thread():
     global offline
     from gyro import GIROSCOPES
     from common import READ_TRIGGER
-    giro = GIROSCOPES(address = 0x68, bus = 1, offline = offline)
+    giro = GIROSCOPES(address = [0x68], bus = 1, offline = offline)
     giro_trigger = READ_TRIGGER(frequency = 50, func = giro.read_data)
 
 def pyro_thread():
