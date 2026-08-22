@@ -129,6 +129,7 @@ def run_display(offline=0):
     splt_count = 0
     update_count = 0
     close_count = 0
+    shutdown_count = 0
     update_status = ''
 
     #splits names fetch
@@ -311,16 +312,28 @@ def run_display(offline=0):
 
                 elif screen_mode == 4:
                     if 100 <= finger[0] <= 700:
-                        if 100 <= finger[1] <= 280:
+                        if 100 <= finger[1] <= 210:
                             update_count = update_count + 1
                             if update_count > 5:
                                 update_status = run_update()
                                 update_count = 0
-                        elif 300 <= finger[1] <= 460:
+                        elif 220 <= finger[1] <= 330:
                             close_count = close_count + 1
                             if close_count > 5:
                                 run_close()
                                 running = False
+                        elif 340 <= finger[1] <= 450:
+                            shutdown_count = shutdown_count + 1
+                            if shutdown_count > 5:
+                                screen.fill((0, 0, 0))
+                                img = font1.render('You can turn off', True, (255, 255, 255))
+                                screen.blit(img, (60, 180))
+                                img = font1.render('computer now', True, (255, 255, 255))
+                                screen.blit(img, (100, 260))
+                                pygame.display.flip()
+                                subprocess.run(['sudo', 'shutdown', '-h', 'now'])
+                                while True:
+                                    time.sleep(60)
 
         if screen_mode == 0:
             if race_mode == 0:
@@ -446,13 +459,17 @@ def run_display(offline=0):
         elif screen_mode == 4:
             screen.fill((20, 20, 20))
 
-            pygame.draw.rect(screen, (60, 60, 60), pygame.Rect(100, 100, 600, 180))
+            pygame.draw.rect(screen, (60, 60, 60), pygame.Rect(100, 100, 600, 110))
             img = font2.render('UPDATE', True, (255, 255, 255))
-            screen.blit(img, (260, 160))
+            screen.blit(img, (260, 130))
 
-            pygame.draw.rect(screen, (90, 30, 30), pygame.Rect(100, 300, 600, 160))
+            pygame.draw.rect(screen, (90, 30, 30), pygame.Rect(100, 220, 600, 110))
             img = font2.render('CLOSE', True, (255, 255, 255))
-            screen.blit(img, (280, 350))
+            screen.blit(img, (280, 250))
+
+            pygame.draw.rect(screen, (30, 30, 30), pygame.Rect(100, 340, 600, 110))
+            img = font2.render('SHUTDOWN', True, (255, 255, 255))
+            screen.blit(img, (185, 370))
 
             if update_status:
                 img = font3.render(update_status, True, (255, 255, 0))
