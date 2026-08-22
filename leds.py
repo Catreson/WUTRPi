@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
-from common import SHM, MQTT_CLIENT
+from common import SHM
 import time
+
+ENGINE_MODE_CODES = {'A': 0, 'P': 1, 'L': 2}
 
 
 def run_leds(offline=0):
@@ -13,20 +15,19 @@ def run_leds(offline=0):
     rev_limiter = 11000
     ptim = 0
     ecu_m = 'A'
-    topic = "bike/display/ecu"
 
-    print('MQTT init')
-    mqtit = MQTT_CLIENT(client_id='leds', offline=offline)
+    cm = SHM()
+    cm.save('engine_mode', ENGINE_MODE_CODES[ecu_m])
 
     def ecu_ping(channel):
         nonlocal ptim, ecu_m
         tim = time.time()
         if ecu_m != 'L' and 0.3 > tim - ptim > 0.2:
             ecu_m = 'L'
-            mqtit.send(topic, "L")
+            cm.save('engine_mode', ENGINE_MODE_CODES[ecu_m])
         elif tim - ptim > 2:
             ecu_m = 'P'
-            mqtit.send(topic, 'P')
+            cm.save('engine_mode', ENGINE_MODE_CODES[ecu_m])
         ptim = tim
 
     GPIO.setmode(GPIO.BCM)
@@ -50,14 +51,13 @@ def run_leds(offline=0):
 
     flash = 0
     prev_gear = 0.0
-    cm = SHM()
 
     try:
         while True:
             tim = time.time()
             if ecu_m != 'A' and not GPIO.input(25) and tim - ptim > 1:
                 ecu_m = 'A'
-                mqtit.send(topic, "A")
+                cm.save('engine_mode', ENGINE_MODE_CODES[ecu_m])
             rpm = cm.read("rpm")
             gear = cm.read("gear")
             if GPIO.input(25) and ecu_m != 'L':

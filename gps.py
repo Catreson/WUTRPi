@@ -65,8 +65,6 @@ NO_DATA_BYTE = 0xFF
 class GPS:
 
     write_topic = 'bike/sensor/gps'
-    rtk_topic = 'bike/display/rtk'
-    listen_topic = 'bike/correction/gps'
 
     def __init__(self, busnum=1, address=0x42, offline=0, ntrip_url=None):
         self.address = address
@@ -89,7 +87,6 @@ class GPS:
 
         self.hdop = 0.0
         self.rtk_flag = 0
-        self._gngns_counter = 0
         self._nmea_buffer = bytearray()
 
     def _write_bytes(self, data):
@@ -184,10 +181,7 @@ class GPS:
         self.rtk_flag = 1 if 'R' in mode else 0
         self.cm.save('gps_hdop', self.hdop)
         self.cm.save('gps_rtk', self.rtk_flag)
-        self._gngns_counter += 1
-        if self._gngns_counter >= 100:
-            self.mqtt.send(topic=self.rtk_topic, event=str(self.rtk_flag))
-            self._gngns_counter = 0
+        self.cm.save('rtk_flag', self.rtk_flag)
 
     def _handle_sentence(self, raw):
         try:

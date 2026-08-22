@@ -43,4 +43,8 @@ gps_speed
 gps_course
 gps_hdop
 gps_rtk
+rtk_flag
+water_err
+engine_mode
+susp_correction_request
 err

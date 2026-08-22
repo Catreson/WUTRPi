@@ -4,34 +4,37 @@ import logging
 from lib import ADS1263
 from common import MQTT_CLIENT, SHM, READ_TRIGGER
 
+CORRECTION_CHANNELS = {1: 'susp_f', 2: 'susp_r', 3: 'p_brake', 4: 'steer_angle'}
+
+
 class SUSPENSION():
     ANALOG_RANGE = 0x7fffffff
     channelList = [0, 1, 2, 3]
     write_topic = 'bike/sensor/susp/'
-    listen_topic = 'bike/correction/susp'
 
-    def correction(self, client, userdata, message):
-        mesenge = str(message.payload.decode("utf-8"))
-        print("message received ", mesenge)
-        print("message topic=", message.topic)
-        print(mesenge)
-        if message.topic == 'bike/correction/susp':
-            try:
-                if 'susp_f' in mesenge:
-                    self.corr_dict['susp_f'] = self.val[0]
-                elif 'susp_r' in mesenge:
-                    self.corr_dict['susp_r'] = self.val[1] - self.ANALOG_RANGE
-                elif 'p_brake' in mesenge:
-                    self.corr_dict['p_brake'] = self.val[2]
-                elif 'steer_angle' in mesenge:
-                    self.corr_dict['steer_angle'] = self.val[3]
-            except:
-                print('err')
+    def apply_correction(self, request_code):
+        channel_name = CORRECTION_CHANNELS.get(request_code)
+        if channel_name is None:
+            return
+        try:
+            if channel_name == 'susp_f':
+                self.corr_dict['susp_f'] = self.val[0]
+            elif channel_name == 'susp_r':
+                self.corr_dict['susp_r'] = self.val[1] - self.ANALOG_RANGE
+            elif channel_name == 'p_brake':
+                self.corr_dict['p_brake'] = self.val[2]
+            elif channel_name == 'steer_angle':
+                self.corr_dict['steer_angle'] = self.val[3]
+        except Exception as exc:
+            logging.warning(f'Correction apply failed for {channel_name}: {exc}')
+            return
+        try:
             with open("/home/catreson/WUTRPi/res/correction.csv", "w") as file:
                 for kej in self.corr_dict.keys():
-                    print(f'{kej},{self.corr_dict[kej]}\n')
                     file.write(f'{kej},{self.corr_dict[kej]}\n')
-        logging.info('Received correction message')
+        except OSError as exc:
+            logging.warning(f'Failed to write correction.csv: {exc}')
+        logging.info(f'Applied correction for {channel_name}')
 
     def __init__(self, offline=0):
         self.corr_dict = {}
@@ -51,6 +54,7 @@ class SUSPENSION():
         except:
             sys.exit('No shared memory access')
         logging.info('SHM set')
+        self.cm.save('susp_correction_request', 0)
 
         logging.info('Creating client')
         try:
@@ -58,9 +62,6 @@ class SUSPENSION():
             self.mqtit = MQTT_CLIENT(client_id='suspension', offline=offline)
             print('MQTT created')
             logging.info('Created client')
-            self.mqtit.subscribe(self.listen_topic, self.correction)
-            print('MQTT set')
-            logging.info('Client connected')
         except:
             sys.exit('No connection to MQTT broker')
         try:
@@ -86,6 +87,12 @@ class SUSPENSION():
 
     def read_data(self):
         self.val = self.ADC.ADS1263_GetAll(self.channelList)
+
+        request = int(self.cm.read('susp_correction_request'))
+        if request != 0:
+            self.apply_correction(request)
+            self.cm.save('susp_correction_request', 0)
+
         susp_f = self.potentiometer(analog_value=(self.val[0] - self.corr_dict.get('susp_f', 0)), potentiometer_length=150)
         pot_r = self.potentiometer(analog_value=(self.val[1] - self.corr_dict.get('susp_r', 0)), potentiometer_length=75)
         susp_r = self.ch_shock(pot_r)
@@ -100,21 +107,6 @@ class SUSPENSION():
         self.cm.save('steer_angle', steer_angle)
         even = f'susp,{time.time() - self.mqtit.timestam},{susp_f} {susp_r} {p_brake} {steer_angle},bike/sensor/susp,string'
         self.mqtit.send(topic=self.write_topic, event=even)
-
-        """self.eventlist += f'{time.time() - self.mqtit.timestam};{susp_f};{susp_r};{p_brake};{steer_angle}:'
-        self.index += 1
-        if self.index >= 40:
-            self.cm.save('susp_f', susp_f)
-            self.cm.save('susp_r', susp_r)
-            self.cm.save('p_brake', p_brake)
-            self.cm.save('steer_angle', steer_angle)
-            self.mqtit.send(topic=self.write_topic,
-                           event=f"susp,{time.time() - self.mqtit.timestam},{self.eventlist},bike/sensor/susp,string")
-            self.eventlist = ""
-            self.index = 0
-        """
-
-        #self.mqtit.send(topic=self.write_topic, event=even)
 
     def __del__(self):
         print("Program end")

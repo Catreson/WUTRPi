@@ -12,6 +12,8 @@ INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
 LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
+ENGINE_MODE_NAMES = {0: 'A', 1: 'P', 2: 'L'}
+SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
 
 
 def _git_remote_url():
@@ -204,7 +206,7 @@ def run_display(offline=0):
     screen_background_3 = pygame.image.load("/home/catreson/WUTRPi/res/back_3.png").convert()
     screen_mcshow = pygame.image.load("/home/catreson/WUTRPi/res/mcshow.jpg").convert()
     screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
-    listen_topic = "bike/display/#"
+    listen_topic = "bike/display/gps"
     pygame.mouse.set_visible(False)
 
 
@@ -218,7 +220,7 @@ def run_display(offline=0):
 
 
     def on_message(client, userdata, message):
-        nonlocal laptime, lapno, delta, rtk_flag, engine_mode, race_mode, water_err
+        nonlocal laptime, lapno, delta
         mesenge = str(message.payload.decode("utf-8"))
         print("message received ", mesenge)
         print("message topic=", message.topic)
@@ -235,25 +237,15 @@ def run_display(offline=0):
                         laptime = laptim1
             except:
                 print('err')
-        elif message.topic == 'bike/display/rtk':
-            if int(mesenge) == 1:
-                rtk_flag = (0, 240, 0)
-            else:
-                rtk_flag = (240, 0, 0)
-        elif message.topic == 'bike/display/ecu':
-            engine_mode = mesenge
-            if engine_mode == 'P':
-                race_mode = 1
-            else:
-                race_mode = 0
-        elif message.topic == 'bike/display/water':
-            water_err = (mesenge == 'ERR')
         print('mqtt')
 
 
 
     cm = SHM()
     data1 = cm.read_bulk()
+    idx_rtk = cm.names_dict['rtk_flag']
+    idx_water = cm.names_dict['water_err']
+    idx_engine = cm.names_dict['engine_mode']
 
     try:
         print('MQTT init')
@@ -279,6 +271,11 @@ def run_display(offline=0):
     running = True
 
     while running:
+        rtk_flag = (0, 240, 0) if data1[idx_rtk] else (240, 0, 0)
+        water_err = bool(data1[idx_water])
+        engine_mode = ENGINE_MODE_NAMES.get(int(data1[idx_engine]), 'A')
+        race_mode = 1 if engine_mode == 'P' else 0
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -308,27 +305,27 @@ def run_display(offline=0):
                             if 180 < finger[1] < 330:
                                 st_count = st_count + 1
                                 if st_count > 5:
-                                    mqtit.send('bike/correction/susp', 'steer_angle')
+                                    cm.save('susp_correction_request', SUSP_CORRECTION_CODES['steer_angle'])
                                     st_count = 0
 
                     elif 400 < finger[0] < 600:
                         if 30 < finger[1] < 180:
                             fc_count = fc_count + 1
                             if fc_count > 5:
-                                mqtit.send('bike/correction/susp', 'susp_f')
+                                cm.save('susp_correction_request', SUSP_CORRECTION_CODES['susp_f'])
                                 fc_count = 0
 
                         if 330 < finger[1] < 480:
                             rc_count = rc_count + 1
                             if rc_count > 5:
-                                mqtit.send('bike/correction/susp', 'susp_r')
+                                cm.save('susp_correction_request', SUSP_CORRECTION_CODES['susp_r'])
                                 rc_count = 0
 
                     elif 600 < finger[0]:
                         if 330 < finger[1] < 480:
                             pb_count = pb_count + 1
                             if pb_count > 5:
-                                mqtit.send('bike/correction/susp', 'p_brake')
+                                cm.save('susp_correction_request', SUSP_CORRECTION_CODES['p_brake'])
                                 pb_count = 0
 
 

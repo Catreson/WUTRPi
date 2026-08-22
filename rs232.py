@@ -56,7 +56,6 @@ class ECU():
     
     last_temp = 0
     write_topic = 'bike/sensor/ecu'
-    water_topic = 'bike/display/water'
 
     def __init__(self, port = "/dev/ttyAMA1", baudrate = 19200, offline = 0):
         self.succes_read = time.time()
@@ -109,13 +108,7 @@ class ECU():
             stale = time.time() - self.succes_read > 4.5
             if stale != self.water_err:
                 self.water_err = stale
-                logging.warning(f'water_err changed to {stale}, sending {self.water_topic}')
-                try:
-                    self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
-                except Exception as exc:
-                    logging.warning(f'water_topic send failed: {exc}')
-                else:
-                    logging.warning('water_topic send returned without raising')
+                self.cm.save('water_err', 1 if stale else 0)
             if stale:
                 self.synchronize_read()
             
