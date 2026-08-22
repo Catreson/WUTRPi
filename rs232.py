@@ -61,7 +61,10 @@ class ECU():
     def __init__(self, port = "/dev/ttyAMA1", baudrate = 19200, offline = 0):
         self.succes_read = time.time()
         self.water_err = False
-        self.ser = serial.Serial(port, baudrate, timeout = 1)
+        try:
+            self.ser = serial.Serial(port, baudrate, timeout = 1)
+        except serial.SerialException as exc:
+            sys.exit(f'No serial connection: {exc}')
         try:
             self.cm = SHM()
         except:
