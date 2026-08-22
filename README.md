@@ -59,6 +59,16 @@ sudo ./install_rc_local.sh
 ```
 `ntrip_credentials.sh` is gitignored - never commit it. If you change anything else in `rc.local`, edit `rc.local.template` and re-run the install script rather than editing `/etc/rc.local` directly, so the change stays tracked.
 
+# Log export (Google Drive)
+The touchscreen's EXPORT screen runs `rclone copy /home/catreson/dane_esp_write/ gdrive:WUTRPi-logs` (in [disp4.py](disp4.py)) - it only uploads new/changed files, never deletes anything on the Drive side, so it's safe to press repeatedly. `rclone` needs a one-time setup on the Pi that can't be done from the touchscreen, since it requires a browser to authorize with Google:
+
+1. Install rclone: `curl https://rclone.org/install.sh | sudo bash`
+2. On a machine with a browser (doesn't have to be the Pi), run `rclone authorize "drive"` and follow the link to sign in with the Google account you want logs uploaded to. It prints a config token when done.
+3. On the Pi, run `rclone config`, create a new remote named exactly `gdrive`, type `drive`, and when it asks about auto config say no and paste the token from step 2 instead.
+4. Test it once by hand: `rclone copy /home/catreson/dane_esp_write/ gdrive:WUTRPi-logs --progress`
+
+After that one-time setup, the EXPORT button just works.
+
 ![image](https://drive.google.com/uc?export=view&id=13yYR1pqgYXPpYR2iEUEK7wSMa94LrRi7)
 
 

@@ -13,6 +13,8 @@ LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
+RCLONE_REMOTE = 'gdrive:WUTRPi-logs'
+EXPORT_DIR = '/home/catreson/dane_esp_write/'
 
 
 def _git_remote_url():
@@ -122,6 +124,23 @@ def request_ecu_restart():
         logging.warning(f'Failed to write ECU restart flag: {exc}')
 
 
+def run_export():
+    try:
+        result = subprocess.run(
+            ['rclone', 'copy', EXPORT_DIR, RCLONE_REMOTE, '--progress'],
+            capture_output=True, text=True, timeout=300)
+        if result.returncode != 0:
+            logging.warning(f'rclone export failed: stdout={result.stdout!r} stderr={result.stderr!r}')
+            return f'Export failed: {result.stderr.strip()[:60]} (see main_log.txt)'
+        return 'Exported OK'
+    except FileNotFoundError:
+        return 'rclone not installed'
+    except subprocess.TimeoutExpired:
+        return 'Export timed out'
+    except Exception as exc:
+        return f'Export error: {exc}'[:80]
+
+
 def run_display(offline=0):
     os.environ["DISPLAY"] = ":0"
     pygame.init()
@@ -163,7 +182,9 @@ def run_display(offline=0):
     close_count = 0
     ecu_restart_count = 0
     shutdown_count = 0
+    export_count = 0
     update_status = ''
+    export_status = ''
     commit_hash = _git_commit_hash()
 
     #splits names fetch
@@ -285,9 +306,9 @@ def run_display(offline=0):
 
                 if 0 <= finger[1] <= 100:
                     if 700 <= finger[0]:
-                        screen_mode = (screen_mode + 1) % 5
+                        screen_mode = (screen_mode + 1) % 6
                     elif finger[0] <= 100:
-                        screen_mode = (screen_mode - 1) % 5
+                        screen_mode = (screen_mode - 1) % 6
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
@@ -369,6 +390,13 @@ def run_display(offline=0):
                                 subprocess.run(['sudo', 'shutdown', '-h', 'now'])
                                 while True:
                                     time.sleep(60)
+
+                elif screen_mode == 5:
+                    if 100 <= finger[0] <= 700 and 150 <= finger[1] <= 330:
+                        export_count = export_count + 1
+                        if export_count > 5:
+                            export_status = run_export()
+                            export_count = 0
 
         if screen_mode == 0:
             if race_mode == 0:
@@ -512,6 +540,17 @@ def run_display(offline=0):
             if update_status:
                 img = font3.render(update_status, True, (255, 255, 0))
                 screen.blit(img, (20, 60))
+
+        elif screen_mode == 5:
+            screen.fill((20, 20, 20))
+
+            pygame.draw.rect(screen, (30, 60, 30), pygame.Rect(100, 150, 600, 180))
+            img = font2.render('EXPORT', True, (255, 255, 255))
+            screen.blit(img, (245, 220))
+
+            if export_status:
+                img = font3.render(export_status, True, (255, 255, 0))
+                screen.blit(img, (20, 20))
 
         pygame.display.flip()
         fpsClock.tick(FPS)
