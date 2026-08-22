@@ -11,6 +11,7 @@ REPO_DIR = '/home/catreson/WUTRPi'
 INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
 LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
+RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
 
 
 def _git_remote_url():
@@ -112,6 +113,14 @@ def run_close():
         logging.warning(f'Failed to launch lx.sh: {exc}')
 
 
+def request_ecu_restart():
+    try:
+        with open(RESTART_ECU_FLAG, 'w') as f:
+            f.write('restart')
+    except OSError as exc:
+        logging.warning(f'Failed to write ECU restart flag: {exc}')
+
+
 def run_display(offline=0):
     os.environ["DISPLAY"] = ":0"
     pygame.init()
@@ -151,6 +160,7 @@ def run_display(offline=0):
     splt_count = 0
     update_count = 0
     close_count = 0
+    ecu_restart_count = 0
     shutdown_count = 0
     update_status = ''
     commit_hash = _git_commit_hash()
@@ -286,6 +296,12 @@ def run_display(offline=0):
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
+
+                elif screen_mode == 0 and water_err and 660 <= finger[0] <= 800 and 250 <= finger[1] <= 330:
+                    ecu_restart_count = ecu_restart_count + 1
+                    if ecu_restart_count > 5:
+                        request_ecu_restart()
+                        ecu_restart_count = 0
 
                 elif screen_mode == 1:
                     if finger[0] < 200:
