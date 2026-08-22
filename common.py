@@ -37,22 +37,18 @@ class READ_TRIGGER():
 
 class SAVE_CSV(metaclass=Singleton):
 
-    mqtt_file = None 
-    
-    def __init__(self, path = '/home/catreson/dane_esp_write/mqtt_csv{filet}', filename = 'mqtt_csv{tim}.csv'):
-        filename.format(tim = time.time())
-        path.format(filet = filename)
-        patho = path + str(round(time.time(),0)) + '.csv'
-        self.mqtt_file = open(patho, 'w')
-        
+    def __init__(self, client_id = 'mqtt', path = '/home/catreson/dane_esp_write/'):
+        filename = f'{client_id}_csv_{round(time.time())}.csv'
+        self.mqtt_file = open(f'{path}{filename}', 'w')
+
     def save(self, event):
         self.mqtt_file.write(f'{event}\n')
+        self.mqtt_file.flush()
 
-class SHM(): #metaclass=Singleton):
-
-    names_dict = defaultdict(lambda : 16)
+class SHM():
 
     def fill_names_dict(self):
+        self.names_dict = defaultdict(lambda: self.names_dict.get('err', 0))
         with open('/home/catreson/WUTRPi/res/sensors.csv', 'r') as filet:
             sensor_number = 0
             for sensor in filet:
@@ -67,16 +63,28 @@ class SHM(): #metaclass=Singleton):
             self.disp_shm = shared_memory.SharedMemory(create=True, size=self.a.nbytes, name='disp_shm')
             self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
             self.b[:] = self.a[:]
-        except:
+        except FileExistsError:
             self.disp_shm = shared_memory.SharedMemory(name='disp_shm')
-            resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
-            self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+            if self.disp_shm.size != self.a.nbytes:
+                logging.warning('Stale disp_shm size does not match sensors.csv, recreating')
+                self.disp_shm.close()
+                self.disp_shm.unlink()
+                self.disp_shm = shared_memory.SharedMemory(create=True, size=self.a.nbytes, name='disp_shm')
+                self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
+                self.b[:] = self.a[:]
+            else:
+                resource_tracker.unregister(self.disp_shm._name, 'shared_memory')
+                self.b = np.ndarray(self.a.shape, dtype=self.a.dtype, buffer=self.disp_shm.buf)
         print('SHM init complete')
 
     def save(self, name, var):
+        if name not in self.names_dict:
+            logging.warning(f'Unknown SHM sensor name "{name}", writing to err slot')
         self.b[self.names_dict[name]] = var
 
-    def read(self, name): 
+    def read(self, name):
+        if name not in self.names_dict:
+            logging.warning(f'Unknown SHM sensor name "{name}", reading err slot')
         return self.b[self.names_dict[name]]
             
     def read_bulk(self):
@@ -85,40 +93,34 @@ class SHM(): #metaclass=Singleton):
 class MQTT_CLIENT():
 
     timestam = 0
-    def send_mqtt(self, topic, event):
-        self.client.publish(topic, event)
-    
-    def send_file(self, topic, event):
-        self.offline_file.save(event)
-        
-    save_mode = {
-      0 : send_mqtt,
-      1 : send_file}
-      
+
     def __init__(self, client_id, offline = 0):
         logging.info('Creating client')
         self.client = mqtt.Client(client_id, protocol = mqtt.MQTTv311)
         self.client.connect('localhost')
+        self.client.loop_start()
         logging.info('Connceted to localhost')
         self.is_offline = offline
         if offline == 1:
-            self.offline_file = SAVE_CSV()
+            self.offline_file = SAVE_CSV(client_id)
         with open('/home/catreson/skrypty/timestamp.txt','r') as filet:
             tmp = filet.readline()
             tmp.strip()
             self.timestam = float(tmp)
 
-        
     def send(self, topic, event):
-        self.save_mode[self.is_offline](self, topic = topic, event = event)
-           
+        if self.is_offline == 1:
+            self.offline_file.save(f'{topic},{event}')
+        else:
+            self.client.publish(topic, event)
+
+
     def subscribe(self, topic, func):
         print('Subscribing')
         self.client.subscribe(topic)
         print('Subscribed, assigning func')
         self.client.on_message = func
-        print('Assigned, looping')
-        self.client.loop_start()
+        print('Assigned')
         
 if __name__ == "__main__":
     print("No use like that")

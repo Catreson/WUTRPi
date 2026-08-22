@@ -1,0 +1,54 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+#sudo chmod 666 /dev/ttyS0 &
+su catreson -c 'echo $(date -u +\%Y\%m\%d\%H\%M\%S) >> /home/catreson/dane_esp_write/boot_log.txt' &
+
+su catreson -c 'echo $(date +%s) &> /home/catreson/skrypty/timestamp.txt' &
+
+#su catreson -c 'python3 /home/catreson/WUTRPi/backup.py' &
+
+# disp4.py is now started by main.py (display_proc) - no longer launched standalone
+#su catreson -c 'python3 /home/catreson/WUTRPi/disp4.py  &> /home/catreson/logs/displ_log.txt' &
+
+#systemctl stop serial-getty@ttyS0.service &
+
+# srtk (C++) is replaced by gps.py, run as gps_proc inside main.py - gps.py now
+# starts and supervises str2str itself (via NTRIP_URL below), so it can restart
+# it if the connection drops instead of main.py's stdin silently going stale
+#su catreson -c 'str2str -in ntrip://mklisiewicz:wsrtsimr@system.asgeupos.pl:8086/RADM_RTCM_3_2 | /home/catreson/WUTRPi/srtk &> /home/catreson/logs/srtk_log$(date -u +\%Y\%m\%d\%H\%M\%S).txt' &
+
+#su catreson -c 'python3 /home/catreson/WUTRPi/main.py &> /home/catreson/logs/main_log.txt' &
+
+# leds.py is now started by main.py (leds_proc) - no longer launched standalone
+#su catreson -c 'python3 /home/catreson/WUTRPi/leds.py' &
+
+#su catreson -c 'python3 /home/catreson/skrypty/disp4.py --DISPLAY=:0 > /home/catreson/logs/display_log.txt' &
+
+su catreson -c 'NTRIP_URL="ntrip://${NTRIP_USER}:${NTRIP_PASS}@system.asgeupos.pl:8086/${NTRIP_MOUNTPOINT}" python3 /home/catreson/WUTRPi/main.py &> /home/catreson/logs/main_log.txt' &
+
+su catreson -c 'python3 /home/catreson/WSRT/PiProjects/SpeedSensor/rpm &> /home/catreson/logs/rpm_log.txt' &
+
+su catreson -c 'mosquitto_sub -t bike/sensor/# &> /home/catreson/dane_esp_write/rad_gps_input_$(date -u +\%Y\%m\%d\%H\%M\%S).csv' &
+
+su catreson -c 'sudo docker run -v /home/catreson/dane_esp_read:/esp-project/home/files -v /home/catreson/dane_esp_write:/esp-project/output iotincloudregistry.azurecr.io/rpi/esprace:timestamp' &
+
+#su catreson -c '/home/cop.sh' &
+
+# Print the IP address
+#_IP=$(hostname -I) || true
+#if [ "$_IP" ]; then
+#  printf "My IP address is %s\n" "$_IP"
+#fi
+
+#exit 0

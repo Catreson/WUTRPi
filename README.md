@@ -16,7 +16,7 @@ gyro - used to run MPU6050 accelerometer + gyroscope (IMU), communication throug
 pyro - used to run multiple MLX90614 pyrometers through SMBus\
 susp - used to run ADS1263 analog readings from linear potentiometers (suspension_front, suspension_read, steer_angle) and brake pressure sensor, communication through SPI\
 rs232 - used to capture data from ECUMaster EMU Black, transfered by AIM dash protocol\
-mqtt_gps - used to pass RTCM ntrip stream to gps module and read GNSS data, made based on [Matusz's](https://github.com/mklisiewicz/WSRT/tree/main/PiProjects/GNSS). Has to receive ntrip stream via str2str from RTKlib. Communication through I2C   \
+mqtt_gps - used to pass RTCM ntrip stream to gps module and read GNSS data \
 backup - used to backup esp output data exposed to overwrite when rebooting \
 leds - managing LED strip, gear display and ECU mode \
 disp4 - interactive GUI to work with 4.3 inch touchscreen
@@ -41,7 +41,23 @@ Motorcycle
 Software listed in modules description\
 Mosquitto MQTT broker\
 SAS ESP from our sponsor SAS Institute\
-Speed sensors software by [Mateusz Klisiewicz](https://github.com/mklisiewicz/WSRT/tree/main/PiProjects/SpeedSensor)
+
+# Running
+`main.py` is the single entry point: it starts every module (ecu, susp, giro, pyro, gps, leds, display) as a supervised child process and restarts any of them that crash. `rc.local` (or whatever starts the software on boot) should launch only:
+
+```
+NTRIP_URL="ntrip://user:pass@host:port/mountpoint" python3 /home/catreson/WUTRPi/main.py
+```
+
+`gps.py` (`gps_proc`) starts and supervises `str2str` itself using `NTRIP_URL`, restarting it if the connection drops. `main.py` will still start and run every other module fine without `NTRIP_URL` set.
+
+`/etc/rc.local` on the Pi is generated from [deploy/rc.local.template](deploy/rc.local.template), which keeps the real ntrip password out of git. To (re)install it on the Pi:
+```
+cd /home/catreson/WUTRPi/deploy
+cp ntrip_credentials.sh.example ntrip_credentials.sh   # first time only, then fill in your ASG-EUPOS account
+sudo ./install_rc_local.sh
+```
+`ntrip_credentials.sh` is gitignored - never commit it. If you change anything else in `rc.local`, edit `rc.local.template` and re-run the install script rather than editing `/etc/rc.local` directly, so the change stays tracked.
 
 ![image](https://drive.google.com/uc?export=view&id=13yYR1pqgYXPpYR2iEUEK7wSMa94LrRi7)
 
