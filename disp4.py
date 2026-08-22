@@ -35,6 +35,10 @@ def _git_branch_name():
     return 'test'
 
 
+def _log_failure(label, result):
+    logging.warning(f'{label} failed (exit {result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}')
+
+
 def _reclone_fresh():
     """Local repo looks corrupt (e.g. from a power-loss during a write on the SD card) -
     throw it away and clone a fresh copy instead of trying to repair it in place."""
@@ -47,12 +51,14 @@ def _reclone_fresh():
     clone = subprocess.run(['git', 'clone', '--branch', branch, '--single-branch', url, tmp_dir],
                             capture_output=True, text=True, timeout=120)
     if clone.returncode != 0:
+        _log_failure('git clone', clone)
         shutil.rmtree(tmp_dir, ignore_errors=True)
-        return f'Re-clone failed: {clone.stderr.strip()[:60]}'
+        return f'Re-clone failed: {clone.stderr.strip()[:60]} (see main_log.txt)'
     try:
         shutil.rmtree(REPO_DIR)
         shutil.move(tmp_dir, REPO_DIR)
     except OSError as exc:
+        logging.warning(f'Failed to swap in fresh clone: {exc}')
         return f'Failed to swap in fresh clone: {exc}'
     return None
 
@@ -66,13 +72,18 @@ def run_update():
             reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
                                     capture_output=True, text=True, timeout=30)
             synced = reset.returncode == 0
+            if not synced:
+                _log_failure('git reset --hard', reset)
+        else:
+            _log_failure('git fetch', fetch)
         if not synced:
             error = _reclone_fresh()
             if error:
                 return error
         install = subprocess.run(['sudo', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
         if install.returncode != 0:
-            return f'rc.local install failed: {install.stderr.strip()[:60]}'
+            _log_failure('install_rc_local.sh', install)
+            return f'rc.local install failed: {install.stderr.strip()[:60]} (see main_log.txt)'
         return 'Updated OK'
     except Exception as exc:
         return f'Update error: {exc}'[:80]
