@@ -109,7 +109,13 @@ class ECU():
             stale = time.time() - self.succes_read > 4.5
             if stale != self.water_err:
                 self.water_err = stale
-                self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
+                logging.warning(f'water_err changed to {stale}, sending {self.water_topic}')
+                try:
+                    self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
+                except Exception as exc:
+                    logging.warning(f'water_topic send failed: {exc}')
+                else:
+                    logging.warning('water_topic send returned without raising')
             if stale:
                 self.synchronize_read()
             
