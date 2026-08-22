@@ -99,15 +99,16 @@ class ECU():
                 self.cm.save(name = sensor[1], var = calc)
                 #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
                 self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
-                stale = time.time() - self.succes_read > 4.5
-                if stale != self.water_err:
-                    self.water_err = stale
-                    self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
-                if stale:
-                    self.synchronize_read()
             except (serial.SerialException, ValueError, IndexError) as exc:
                 logging.warning(f'ECU read error: {exc}')
                 time.sleep(0.1)
+
+            stale = time.time() - self.succes_read > 4.5
+            if stale != self.water_err:
+                self.water_err = stale
+                self.mqtt.send(topic = self.water_topic, event = 'ERR' if stale else 'OK')
+            if stale:
+                self.synchronize_read()
             
 if __name__ == "__main__":
     eku = ECU()

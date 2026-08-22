@@ -35,6 +35,17 @@ def _git_branch_name():
     return 'test'
 
 
+def _git_commit_hash():
+    try:
+        result = subprocess.run(['git', '-C', REPO_DIR, 'rev-parse', '--short', 'HEAD'],
+                                 capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return 'unknown'
+
+
 def _log_failure(label, result):
     logging.warning(f'{label} failed (exit {result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}')
 
@@ -142,6 +153,7 @@ def run_display(offline=0):
     close_count = 0
     shutdown_count = 0
     update_status = ''
+    commit_hash = _git_commit_hash()
 
     #splits names fetch
     split_dict = {}
@@ -328,6 +340,7 @@ def run_display(offline=0):
                             if update_count > 5:
                                 update_status = run_update()
                                 update_count = 0
+                                commit_hash = _git_commit_hash()
                         elif 220 <= finger[1] <= 330:
                             close_count = close_count + 1
                             if close_count > 5:
@@ -482,9 +495,12 @@ def run_display(offline=0):
             img = font2.render('SHUTDOWN', True, (255, 255, 255))
             screen.blit(img, (185, 370))
 
+            img = font3.render(f'commit: {commit_hash}', True, (150, 150, 150))
+            screen.blit(img, (20, 20))
+
             if update_status:
                 img = font3.render(update_status, True, (255, 255, 0))
-                screen.blit(img, (20, 20))
+                screen.blit(img, (20, 60))
 
         pygame.display.flip()
         fpsClock.tick(FPS)
