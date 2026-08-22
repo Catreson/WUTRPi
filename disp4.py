@@ -80,7 +80,7 @@ def run_update():
             error = _reclone_fresh()
             if error:
                 return error
-        install = subprocess.run(['sudo', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
+        install = subprocess.run(['sudo', 'sh', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
         if install.returncode != 0:
             _log_failure('install_rc_local.sh', install)
             return f'rc.local install failed: {install.stderr.strip()[:60]} (see main_log.txt)'
