@@ -16,9 +16,12 @@ gyro - used to run MPU6050 accelerometer + gyroscope (IMU), communication throug
 pyro - used to run multiple MLX90614 pyrometers through SMBus\
 susp - used to run ADS1263 analog readings from linear potentiometers (suspension_front, suspension_read, steer_angle) and brake pressure sensor, communication through SPI\
 rs232 - used to capture data from ECUMaster EMU Black, transfered by AIM dash protocol\
-gps - used to configure the ZED-F9P over I2C, forward the RTCM correction stream to it and publish parsed GNRMC/GNGNS data. Has to receive the ntrip stream via str2str from RTKlib piped into this process's stdin (e.g. `str2str ... | python3 main.py`), since gps_proc is a forked child of main.py and inherits its stdin. Communication through I2C   \
-backup - used to backup esp output data exposed to overwrite when rebooting
-leds - managing LED strip, gear display and ECU mode
+mqtt_gps - used to pass RTCM ntrip stream to gps module and read GNSS data \
+backup - used to backup esp output data exposed to overwrite when rebooting \
+leds - managing LED strip, gear display and ECU mode \
+disp4 - interactive GUI to work with 4.3 inch touchscreen
+
+![image](https://drive.google.com/uc?export=view&id=1jlI3O5ybrKBeGud8adDAkh9nt0LPHp7L)
 
 # Hardware description
 Raspberry Pi 4B 4GB\
@@ -26,7 +29,7 @@ Raspberry Pi 4B 4GB\
 ADS1263 ADC HAT from WaveShare\
 3 linear potentiometers\
 Bosch 0265 005 303 brake pressure sensor\
-6 MLX90614 pytometers\
+6 MLX90614 pyrometers\
 2 MPU6050 accelerometers + gyroscopes\
 SparkFun GPS-RTK-SMA Breakout - ZED-F9P\
 SIM7600E-H 4G HAT\
