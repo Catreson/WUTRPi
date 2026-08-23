@@ -3,7 +3,6 @@ import binascii
 import time
 import sys
 from common import SHM, MQTT_CLIENT
-from collections import defaultdict
 import logging
 
 class ECU():
@@ -24,6 +23,13 @@ class ECU():
         y = x/10
         return y
 
+    def rpm_conv(self, x):
+        y = x
+        if y > 16000:
+            logging.warning(f'Implausible rpm reading {y}, forcing resync')
+            self.synchronize_read()
+        return y
+
     def bar(self, x):
         y=x/1000
         return y
@@ -36,7 +42,7 @@ class ECU():
         y=x/100
         return y
 
-    sensor_list=[[1,'rpm',10,mbar],
+    sensor_list=[[1,'rpm',10,rpm_conv],
     [5,'wheel_f_ecu',10,speed],
     [9,'p_oil',5,bar],
     [13,'t_oil',2,temp],
@@ -52,7 +58,7 @@ class ECU():
     [113,'gear',5,mbar],
     [12,'cos',5,mbar]] #nie wiem co to, ja tez nie
     
-    sensor_dict = defaultdict(lambda : [666, 'err', 0, lambda s, x: 0])
+    sensor_dict = {}
     
     last_temp = 0
     write_topic = 'bike/sensor/ecu'
@@ -78,6 +84,12 @@ class ECU():
         for sensor in self.sensor_list:
             self.sensor_dict[sensor[0]] = sensor
 
+    def _read_exact(self, size):
+        data = self.ser.read(size=size)
+        if len(data) != size:
+            raise ValueError(f'short read: wanted {size} bytes, got {len(data)}')
+        return data
+
     def synchronize_read(self, max_attempts = 20):
         for _ in range(max_attempts):
             data = self.ser.read(size=1)
@@ -91,25 +103,30 @@ class ECU():
 
     def reading_loop(self):
         while True:
+            resynced = False
             try:
-                kanal = int(binascii.b2a_hex(self.ser.read(size=1)),16)
-                self.ser.read(size=1)
-                value = int(binascii.b2a_hex(self.ser.read(size=2)),16)
-                self.ser.read(size=1)
-                sensor = self.sensor_dict[kanal]
-                calc = sensor[3](self, x = value)
-                self.cm.save(name = sensor[1], var = calc)
-                #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
-                self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
+                kanal = int(binascii.b2a_hex(self._read_exact(1)),16)
+                self._read_exact(1)
+                value = int(binascii.b2a_hex(self._read_exact(2)),16)
+                self._read_exact(1)
+                sensor = self.sensor_dict.get(kanal)
+                if sensor is not None:
+                    calc = sensor[3](self, x = value)
+                    self.cm.save(name = sensor[1], var = calc)
+                    #print(f"{sensor[1]},{time.time()},{calc},bike/sensor/ecu,double")
+                    self.mqtt.send(topic = self.write_topic, event = f"{sensor[1]},{time.time()- self.mqtt.timestam},{calc},bike/sensor/ecu,double")
+                # else: channel not decoded by this driver yet - not necessarily a sync error, skip quietly
             except (serial.SerialException, ValueError, IndexError) as exc:
                 logging.warning(f'ECU read error: {exc}')
+                self.synchronize_read()
+                resynced = True
                 time.sleep(0.1)
 
             stale = time.time() - self.succes_read > 4.5
             if stale != self.water_err:
                 self.water_err = stale
                 self.cm.save('water_err', 1 if stale else 0)
-            if stale:
+            if stale and not resynced:
                 self.synchronize_read()
             
 if __name__ == "__main__":

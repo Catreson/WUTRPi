@@ -1,10 +1,12 @@
 import os
+import glob
 import time
 import logging
 from multiprocessing import Process
 
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
-RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
+RESTART_FLAG_PREFIX = '/tmp/wutrpi_restart_'
+DISABLE_FLAG_PREFIX = '/tmp/wutrpi_disable_'
 
 pyro_list = [['pyro_fc', 0x5a],
   ['pyro_fr', 0x6a],
@@ -80,8 +82,8 @@ proces_dict = {
 if __name__ == "__main__":
     if os.path.exists(DISPLAY_STOP_FLAG):
         os.remove(DISPLAY_STOP_FLAG)
-    if os.path.exists(RESTART_ECU_FLAG):
-        os.remove(RESTART_ECU_FLAG)
+    for flag in glob.glob(f'{RESTART_FLAG_PREFIX}*') + glob.glob(f'{DISABLE_FLAG_PREFIX}*'):
+        os.remove(flag)
 
     P = []
     for proces_name in proces_dict:
@@ -93,33 +95,59 @@ if __name__ == "__main__":
             logging.warning(f'{proces_name} not started')
 
     while True:
-        if os.path.exists(RESTART_ECU_FLAG):
-            os.remove(RESTART_ECU_FLAG)
-            for (nam, proces) in list(P):
-                if nam == 'ecu_proc':
-                    logging.warning('ecu_proc restart requested')
-                    P.remove((nam, proces))
-                    if proces.is_alive():
-                        proces.terminate()
-                        proces.join(timeout=5)
-                    p = Process(target = proces_dict[nam], name = nam)
-                    p.start()
-                    logging.warning('ecu_proc restarted on request')
-                    P.append((nam, p))
+        for proces_name in proces_dict:
+            restart_flag = f'{RESTART_FLAG_PREFIX}{proces_name}'
+            if os.path.exists(restart_flag):
+                os.remove(restart_flag)
+                logging.warning(f'{proces_name} restart requested')
+                for (nam, proces) in list(P):
+                    if nam == proces_name:
+                        P.remove((nam, proces))
+                        if proces.is_alive():
+                            proces.terminate()
+                            proces.join(timeout=5)
+                        break
 
-        for (nam, proces) in list(P):
-            if proces.is_alive():
-                logging.info(f'{nam} is alive')
-            elif nam == 'display_proc' and os.path.exists(DISPLAY_STOP_FLAG):
-                logging.info('display_proc intentionally stopped, not resurrecting')
-                P.remove((nam, proces))
-            else:
-                logging.warning(f'{nam} is dead')
-                P.remove((nam, proces))
-                p = Process(target = proces_dict[nam], name = nam)
+        running_names = {nam for nam, _ in P}
+
+        for proces_name in proces_dict:
+            disabled = os.path.exists(f'{DISABLE_FLAG_PREFIX}{proces_name}')
+            is_running = proces_name in running_names
+
+            if disabled:
+                if is_running:
+                    for (nam, proces) in list(P):
+                        if nam == proces_name:
+                            logging.warning(f'{nam} disabled, stopping')
+                            P.remove((nam, proces))
+                            if proces.is_alive():
+                                proces.terminate()
+                                proces.join(timeout=5)
+                            break
+                continue
+
+            if is_running:
+                for (nam, proces) in list(P):
+                    if nam == proces_name:
+                        if proces.is_alive():
+                            logging.info(f'{nam} is alive')
+                        elif nam == 'display_proc' and os.path.exists(DISPLAY_STOP_FLAG):
+                            logging.info('display_proc intentionally stopped, not resurrecting')
+                            P.remove((nam, proces))
+                        else:
+                            logging.warning(f'{nam} is dead')
+                            P.remove((nam, proces))
+                            p = Process(target = proces_dict[nam], name = nam)
+                            p.start()
+                            logging.warning(f'{nam} is ressurected')
+                            P.append((nam, p))
+                        break
+            elif not (proces_name == 'display_proc' and os.path.exists(DISPLAY_STOP_FLAG)):
+                p = Process(target = proces_dict[proces_name], name = proces_name)
                 p.start()
-                logging.warning(f'{nam} is ressurected')
-                P.append((nam, p))
+                logging.warning(f'{proces_name} started')
+                P.append((proces_name, p))
+
         time.sleep(10)
 
 

@@ -2,6 +2,7 @@ import pygame
 import os
 import time
 from common import SHM, MQTT_CLIENT
+from collections import defaultdict
 import logging
 import sys
 import shutil
@@ -11,10 +12,12 @@ REPO_DIR = '/home/catreson/WUTRPi'
 INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
 LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
-RESTART_ECU_FLAG = '/tmp/wutrpi_restart_ecu'
+RESTART_FLAG_PREFIX = '/tmp/wutrpi_restart_'
+DISABLE_FLAG_PREFIX = '/tmp/wutrpi_disable_'
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
 RCLONE_REMOTE = 'gdrive:WUTRPi-logs'
 EXPORT_DIR = '/home/catreson/dane_esp_write/'
+CONTROLLABLE_PROCS = ['ecu_proc', 'susp_proc', 'giro_proc', 'pyro_proc', 'gps_proc', 'leds_proc', 'logger_proc']
 
 
 def _git_remote_url():
@@ -116,12 +119,28 @@ def run_close():
         logging.warning(f'Failed to launch lx.sh: {exc}')
 
 
-def request_ecu_restart():
+def request_restart(proc_name):
     try:
-        with open(RESTART_ECU_FLAG, 'w') as f:
+        with open(f'{RESTART_FLAG_PREFIX}{proc_name}', 'w') as f:
             f.write('restart')
     except OSError as exc:
-        logging.warning(f'Failed to write ECU restart flag: {exc}')
+        logging.warning(f'Failed to write restart flag for {proc_name}: {exc}')
+
+
+def is_proc_disabled(proc_name):
+    return os.path.exists(f'{DISABLE_FLAG_PREFIX}{proc_name}')
+
+
+def toggle_proc_disabled(proc_name):
+    flag_path = f'{DISABLE_FLAG_PREFIX}{proc_name}'
+    try:
+        if os.path.exists(flag_path):
+            os.remove(flag_path)
+        else:
+            with open(flag_path, 'w') as f:
+                f.write('disabled')
+    except OSError as exc:
+        logging.warning(f'Failed to toggle disable flag for {proc_name}: {exc}')
 
 
 def run_export():
@@ -185,6 +204,8 @@ def run_display(offline=0):
     export_count = 0
     update_status = ''
     export_status = ''
+    proc_status = ''
+    proc_action_counts = defaultdict(int)
     commit_hash = _git_commit_hash()
 
     #splits names fetch
@@ -306,9 +327,9 @@ def run_display(offline=0):
 
                 if 0 <= finger[1] <= 100:
                     if 700 <= finger[0]:
-                        screen_mode = (screen_mode + 1) % 6
+                        screen_mode = (screen_mode + 1) % 7
                     elif finger[0] <= 100:
-                        screen_mode = (screen_mode - 1) % 6
+                        screen_mode = (screen_mode - 1) % 7
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
@@ -316,7 +337,7 @@ def run_display(offline=0):
                 elif screen_mode == 0 and water_err and 660 <= finger[0] <= 800 and 250 <= finger[1] <= 330:
                     ecu_restart_count = ecu_restart_count + 1
                     if ecu_restart_count > 5:
-                        request_ecu_restart()
+                        request_restart('ecu_proc')
                         ecu_restart_count = 0
 
                 elif screen_mode == 1:
@@ -397,6 +418,28 @@ def run_display(offline=0):
                         if export_count > 5:
                             export_status = run_export()
                             export_count = 0
+
+                elif screen_mode == 6:
+                    for i, proc_name in enumerate(CONTROLLABLE_PROCS):
+                        row_y = 104 + i * 48
+                        if not (row_y <= finger[1] <= row_y + 40):
+                            continue
+                        if 400 <= finger[0] <= 550:
+                            key = ('restart', proc_name)
+                            proc_action_counts[key] += 1
+                            if proc_action_counts[key] > 5:
+                                request_restart(proc_name)
+                                proc_status = f'Restarted {proc_name}'
+                                proc_action_counts[key] = 0
+                        elif 580 <= finger[0] <= 760:
+                            key = ('toggle', proc_name)
+                            proc_action_counts[key] += 1
+                            if proc_action_counts[key] > 5:
+                                toggle_proc_disabled(proc_name)
+                                verb = 'Disabled' if is_proc_disabled(proc_name) else 'Enabled'
+                                proc_status = f'{verb} {proc_name}'
+                                proc_action_counts[key] = 0
+                        break
 
         if screen_mode == 0:
             if race_mode == 0:
@@ -551,6 +594,35 @@ def run_display(offline=0):
             if export_status:
                 img = font3.render(export_status, True, (255, 255, 0))
                 screen.blit(img, (20, 20))
+
+        elif screen_mode == 6:
+            screen.fill((20, 20, 20))
+            img = font3.render('PROCESSES', True, (200, 200, 200))
+            screen.blit(img, (20, 15))
+
+            for i, proc_name in enumerate(CONTROLLABLE_PROCS):
+                row_y = 104 + i * 48
+                disabled = is_proc_disabled(proc_name)
+
+                img = font3.render(proc_name.replace('_proc', '').upper(), True, (255, 255, 255))
+                screen.blit(img, (20, row_y + 8))
+
+                status_col = (140, 140, 140) if disabled else (0, 200, 0)
+                img = font3.render('DISABLED' if disabled else 'RUNNING', True, status_col)
+                screen.blit(img, (170, row_y + 8))
+
+                pygame.draw.rect(screen, (60, 60, 90), pygame.Rect(400, row_y, 150, 40))
+                img = font3.render('RESTART', True, (255, 255, 255))
+                screen.blit(img, (415, row_y + 8))
+
+                toggle_col = (30, 90, 30) if disabled else (90, 30, 30)
+                pygame.draw.rect(screen, toggle_col, pygame.Rect(580, row_y, 180, 40))
+                img = font3.render('ENABLE' if disabled else 'DISABLE', True, (255, 255, 255))
+                screen.blit(img, (605, row_y + 8))
+
+            if proc_status:
+                img = font3.render(proc_status, True, (255, 255, 0))
+                screen.blit(img, (20, 444))
 
         pygame.display.flip()
         fpsClock.tick(FPS)
