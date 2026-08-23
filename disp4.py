@@ -15,7 +15,7 @@ DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
 RESTART_FLAG_PREFIX = '/tmp/wutrpi_restart_'
 DISABLE_FLAG_PREFIX = '/tmp/wutrpi_disable_'
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
-RCLONE_REMOTE = 'gdrive:WUTRPi-logs'
+RCLONE_REMOTE = 'gdrive2:WUTRPi-logs'
 EXPORT_DIR = '/home/catreson/dane_esp_write/'
 CONTROLLABLE_PROCS = ['ecu_proc', 'susp_proc', 'giro_proc', 'pyro_proc', 'gps_proc', 'leds_proc', 'logger_proc']
 
