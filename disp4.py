@@ -19,7 +19,7 @@ DISABLE_FLAG_PREFIX = '/tmp/wutrpi_disable_'
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
 RCLONE_REMOTE = 'gdrive2:WUTRPi-logs'
 EXPORT_DIR = '/home/catreson/dane_esp_write/'
-CONTROLLABLE_PROCS = ['ecu_proc', 'susp_proc', 'giro_proc', 'pyro_proc', 'gps_proc', 'leds_proc', 'logger_proc']
+CONTROLLABLE_PROCS = ['ecu_proc', 'susp_proc', 'pyro_proc', 'gps_proc', 'leds_proc', 'logger_proc']
 
 
 def _git_remote_url():
@@ -59,6 +59,28 @@ def _log_failure(label, result):
     logging.warning(f'{label} failed (exit {result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}')
 
 
+NETWORK_ERROR_MARKERS = [
+    'could not resolve host',
+    'could not resolve proxy',
+    'connection timed out',
+    'connection refused',
+    'network is unreachable',
+    'unable to access',
+    'could not connect',
+    'failed to connect',
+    'no address associated with hostname',
+    'temporary failure in name resolution',
+    'ssl connect error',
+    'recv failure',
+    'operation timed out',
+]
+
+
+def _looks_like_network_error(stderr_text):
+    lowered = (stderr_text or '').lower()
+    return any(marker in lowered for marker in NETWORK_ERROR_MARKERS)
+
+
 def _reclone_fresh():
     """Local repo looks corrupt (e.g. from a power-loss during a write on the SD card) -
     throw it away and clone a fresh copy instead of trying to repair it in place."""
@@ -86,20 +108,24 @@ def _reclone_fresh():
 def run_update():
     try:
         fetch = subprocess.run(['git', '-C', REPO_DIR, 'fetch', 'origin'], capture_output=True, text=True, timeout=30)
-        synced = False
-        if fetch.returncode == 0:
-            branch_name = _git_branch_name()
-            reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
-                                    capture_output=True, text=True, timeout=30)
-            synced = reset.returncode == 0
-            if not synced:
-                _log_failure('git reset --hard', reset)
-        else:
+        if fetch.returncode != 0:
             _log_failure('git fetch', fetch)
-        if not synced:
+            if _looks_like_network_error(fetch.stderr):
+                return 'No internet connection, try again later'
+            # fetch failed for a reason other than connectivity - local repo may genuinely
+            # be corrupt (e.g. power loss mid-write), worth trying a fresh clone
             error = _reclone_fresh()
             if error:
                 return error
+        else:
+            branch_name = _git_branch_name()
+            reset = subprocess.run(['git', '-C', REPO_DIR, 'reset', '--hard', f'origin/{branch_name}'],
+                                    capture_output=True, text=True, timeout=30)
+            if reset.returncode != 0:
+                _log_failure('git reset --hard', reset)
+                error = _reclone_fresh()
+                if error:
+                    return error
         install = subprocess.run(['sudo', 'sh', INSTALL_RC_LOCAL], capture_output=True, text=True, timeout=30)
         if install.returncode != 0:
             _log_failure('install_rc_local.sh', install)
@@ -425,6 +451,10 @@ def run_display(offline=0):
                         if 100 <= finger[1] <= 210:
                             update_count = update_count + 1
                             if update_count > 5:
+                                screen.fill((20, 20, 20))
+                                img = font2.render('UPDATING...', True, (255, 255, 0))
+                                screen.blit(img, (170, 200))
+                                pygame.display.flip()
                                 update_status = run_update()
                                 update_count = 0
                                 commit_hash = _git_commit_hash()

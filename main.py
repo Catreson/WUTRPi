@@ -72,7 +72,7 @@ def logger_thread():
 proces_dict = {
   'ecu_proc': ECU_thread,
   'susp_proc': susp_thread,
-  'giro_proc': giro_thread,
+  # giro_proc dropped for now - interferes with gps_proc on the shared I2C bus 1
   'pyro_proc': pyro_thread,
   'gps_proc': gps_thread,
   'leds_proc': leds_thread,
