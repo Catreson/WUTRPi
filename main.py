@@ -82,8 +82,10 @@ proces_dict = {
 if __name__ == "__main__":
     if os.path.exists(DISPLAY_STOP_FLAG):
         os.remove(DISPLAY_STOP_FLAG)
-    for flag in glob.glob(f'{RESTART_FLAG_PREFIX}*') + glob.glob(f'{DISABLE_FLAG_PREFIX}*'):
+    for flag in glob.glob(f'{RESTART_FLAG_PREFIX}*'):
         os.remove(flag)
+    # disable flags are intentionally NOT cleared here - a process disabled from the
+    # touchscreen (screen_mode 6) should stay disabled across reboots until re-enabled
 
     P = []
     for proces_name in proces_dict:

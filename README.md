@@ -60,14 +60,38 @@ sudo ./install_rc_local.sh
 `ntrip_credentials.sh` is gitignored - never commit it. If you change anything else in `rc.local`, edit `rc.local.template` and re-run the install script rather than editing `/etc/rc.local` directly, so the change stays tracked.
 
 # Log export (Google Drive)
-The touchscreen's EXPORT screen runs `rclone copy /home/catreson/dane_esp_write/ gdrive2:WUTRPi-logs` (in [disp4.py](disp4.py)) - it only uploads new/changed files, never deletes anything on the Drive side, so it's safe to press repeatedly. The remote is named `gdrive2` (not `gdrive`) because the Pi already had an older, unrelated `gdrive` rclone remote configured - reusing that name would have repointed/overwritten it. `rclone` needs a one-time setup on the Pi that can't be done from the touchscreen, since it requires a browser to authorize with Google:
+The touchscreen's EXPORT screen runs `rclone copy /home/catreson/dane_esp_write/ gdrive2:WUTRPi-logs` (in [disp4.py](disp4.py)) - it only uploads new/changed files, never deletes anything on the Drive side, so it's safe to press repeatedly. The remote is named `gdrive2` (not `gdrive`) because the Pi already had an older, unrelated `gdrive` rclone remote configured - reusing that name would have repointed/overwritten it.
 
-1. Install rclone: `curl https://rclone.org/install.sh | sudo bash`
-2. On a machine with a browser (doesn't have to be the Pi), run `rclone authorize "drive"` and follow the link to sign in with the Google account you want logs uploaded to. It prints a config token when done.
-3. On the Pi, run `rclone config`, create a new remote named exactly `gdrive2`, type `drive`, and when it asks about auto config say no and paste the token from step 2 instead.
-4. Test it once by hand: `rclone copy /home/catreson/dane_esp_write/ gdrive2:WUTRPi-logs --progress`
+`rclone` needs a one-time setup that authorizes it against your Google account. The Pi is headless (no browser), so **do not** try to run the whole setup on the Pi - the "Use auto config?" step in `rclone config` will try to open a browser (or a localhost URL) *on the Pi itself*, which is unreachable and just hangs/fails. The reliable way around this is to do the entire setup on your laptop (which has a real browser) and then copy the resulting config over to the Pi.
 
-After that one-time setup, the EXPORT button just works.
+**On your laptop:**
+1. Install rclone: https://rclone.org/downloads/ (or `sudo apt install rclone` / `brew install rclone`, on Windows download the zip).
+2. Run `rclone config`. Answer the prompts:
+   - `e/n/d/r/c/s/q>` → `n` (new remote)
+   - `name>` → `gdrive2`
+   - `Storage>` → type `drive` (or the number next to "Google Drive" in the list)
+   - `client_id>` → leave blank, press enter
+   - `client_secret>` → leave blank, press enter
+   - `scope>` → `1` (full access)
+   - `root_folder_id>` → leave blank, press enter
+   - `service_account_file>` → leave blank, press enter
+   - `Edit advanced config?` → `n`
+   - `Use auto config?` → **`y`** (fine here - this machine has a browser)
+   - A browser tab opens - sign in with the Google account you want logs uploaded to, click Allow.
+   - `Configure this as a Shared Drive?` → `n`
+   - `y/e/d>` → `y` to keep it
+   - `q` to quit config
+3. Find the config file rclone just wrote: `rclone config file` (prints the exact path - e.g. `~/.config/rclone/rclone.conf` on Linux/Mac, `%APPDATA%\rclone\rclone.conf` on Windows). Open it and copy the whole `[gdrive2]` section (a few lines starting with `[gdrive2]` down to the next `[` or end of file).
+
+**On the Pi:**
+4. Install rclone: `curl https://rclone.org/install.sh | sudo bash`
+5. Open (or create) `~/.config/rclone/rclone.conf` and paste in the `[gdrive2]` section you copied - just append it, don't touch the existing `[gdrive]` section if there is one.
+6. Verify it works: `rclone lsd gdrive2:` should print an empty list (or existing folders) with no error.
+7. Test the actual export once by hand: `rclone copy /home/catreson/dane_esp_write/ gdrive2:WUTRPi-logs --progress`
+
+After that one-time setup, the EXPORT button on the touchscreen just works - no more setup needed, and re-running it (e.g. after re-flashing the SD card) just means repeating steps 4-6 with the same already-authorized `[gdrive2]` section from your laptop, no new Google sign-in required.
+
+If you'd rather avoid copying config files around, the alternative is running `rclone authorize "drive"` on your laptop and pasting the printed token into `rclone config` on the Pi when it asks for `config_token` (after answering `n` to "Use auto config?") - but pasting a long token over an SSH session can be finicky, so the copy-the-config-file route above is usually less error-prone.
 
 ![image](https://drive.google.com/uc?export=view&id=13yYR1pqgYXPpYR2iEUEK7wSMa94LrRi7)
 

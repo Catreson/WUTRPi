@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from multiprocessing import shared_memory, resource_tracker
 import time
@@ -5,6 +6,8 @@ from threading import Lock, Thread
 import paho.mqtt.client as mqtt
 from collections import defaultdict
 import logging
+
+REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Singleton(type):
 
@@ -49,7 +52,7 @@ class SHM():
 
     def fill_names_dict(self):
         self.names_dict = defaultdict(lambda: self.names_dict.get('err', 0))
-        with open('/home/catreson/WUTRPi/res/sensors.csv', 'r') as filet:
+        with open(os.path.join(REPO_DIR, 'res', 'sensors.csv'), 'r') as filet:
             sensor_number = 0
             for sensor in filet:
                 self.names_dict[sensor.strip()] = sensor_number

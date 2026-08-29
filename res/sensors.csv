@@ -43,6 +43,7 @@ gps_speed
 gps_course
 gps_hdop
 gps_rtk
+gps_sats
 rtk_flag
 water_err
 engine_mode

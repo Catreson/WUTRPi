@@ -8,7 +8,9 @@ import sys
 import shutil
 import subprocess
 
-REPO_DIR = '/home/catreson/WUTRPi'
+IS_PI = sys.platform.startswith('linux')
+REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+RES_DIR = os.path.join(REPO_DIR, 'res')
 INSTALL_RC_LOCAL = f'{REPO_DIR}/deploy/install_rc_local.sh'
 LX_SCRIPT = '/home/catreson/lx.sh'
 DISPLAY_STOP_FLAG = '/tmp/wutrpi_display_stopped'
@@ -211,7 +213,11 @@ def run_display(offline=0):
     #splits names fetch
     split_dict = {}
     pather = '/home/catreson/dane_esp_read/'
-    entries = os.listdir(pather)
+    try:
+        entries = os.listdir(pather)
+    except OSError as exc:
+        logging.warning(f'Cannot list {pather}: {exc}')
+        entries = []
     indexer = 0
     for split in entries:
         if 'splits_' in split:
@@ -230,6 +236,21 @@ def run_display(offline=0):
     font1 = pygame.font.SysFont(None, 180)
     font2 = pygame.font.SysFont(None, 100)
     font3 = pygame.font.SysFont(None, 60)
+    font_label = pygame.font.SysFont(None, 32)
+    font_coord = pygame.font.SysFont(None, 44)
+
+    GRID_TOP = 60
+    GRID_COLORS = [(140, 90, 200), (40, 110, 220), (100, 220, 220), (200, 220, 235)]
+
+    def draw_grid_cell(row, col, label, width1, height1):
+        color = GRID_COLORS[(2 * row + col) % 4]
+        rect = pygame.Rect(col * width1, GRID_TOP + row * height1, width1, height1)
+        pygame.draw.rect(screen, color, rect)
+        pygame.draw.rect(screen, (40, 40, 40), rect, 2)
+        if label:
+            text_color = tuple(int(c * 0.55) for c in color)
+            img = font_label.render(label, True, text_color)
+            screen.blit(img, (rect.x + 10, rect.y + 10))
 
     FPS = 10
     fpsClock = pygame.time.Clock()
@@ -238,15 +259,15 @@ def run_display(offline=0):
 
     # end GPIO config
 
-    screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN)
+    screen = pygame.display.set_mode(display_resolution, pygame.FULLSCREEN if IS_PI else 0)
     # screen = pygame.display.set_mode(display_resolution)
     pygame.display.set_caption('Display')
-    screen_background_0 = pygame.image.load("/home/catreson/WUTRPi/res/back_0.png").convert()
-    screen_background_1 = pygame.image.load("/home/catreson/WUTRPi/res/back_1.png").convert()
-    screen_background_2 = pygame.image.load("/home/catreson/WUTRPi/res/back_2.png").convert()
-    screen_background_3 = pygame.image.load("/home/catreson/WUTRPi/res/back_3.png").convert()
-    screen_mcshow = pygame.image.load("/home/catreson/WUTRPi/res/mcshow.jpg").convert()
-    screen_loading = pygame.image.load("/home/catreson/WUTRPi/res/wut.png").convert()
+    screen_background_0 = pygame.image.load(os.path.join(RES_DIR, "back_0.png")).convert()
+    screen_background_1 = pygame.image.load(os.path.join(RES_DIR, "back_1.png")).convert()
+    screen_background_2 = pygame.image.load(os.path.join(RES_DIR, "back_2.png")).convert()
+    screen_background_3 = pygame.image.load(os.path.join(RES_DIR, "back_3.png")).convert()
+    screen_mcshow = pygame.image.load(os.path.join(RES_DIR, "mcshow.jpg")).convert()
+    screen_loading = pygame.image.load(os.path.join(RES_DIR, "wut.png")).convert()
     listen_topic = "bike/display/gps"
     pygame.mouse.set_visible(False)
 
@@ -286,6 +307,17 @@ def run_display(offline=0):
     data1 = cm.read_bulk()
     idx_rtk = cm.names_dict['rtk_flag']
     idx_water = cm.names_dict['water_err']
+    idx_gear = cm.names_dict['gear']
+    idx_gps_lon = cm.names_dict['gps_lon']
+    idx_gps_lat = cm.names_dict['gps_lat']
+    idx_gps_sats = cm.names_dict['gps_sats']
+    idx_gps_rtk = cm.names_dict['gps_rtk']
+    idx_pyro_fc = cm.names_dict['pyro_fc']
+    idx_pyro_fr = cm.names_dict['pyro_fr']
+    idx_pyro_fl = cm.names_dict['pyro_fl']
+    idx_pyro_rc = cm.names_dict['pyro_rc']
+    idx_pyro_rr = cm.names_dict['pyro_rr']
+    idx_pyro_rl = cm.names_dict['pyro_rl']
 
     try:
         print('MQTT init')
@@ -295,8 +327,10 @@ def run_display(offline=0):
         mqtit.subscribe(listen_topic, on_message)
         print('MQTT set')
         logging.info('Client connected')
-    except:
-        sys.exit('No connection to MQTT broker')
+    except Exception as exc:
+        if IS_PI:
+            sys.exit('No connection to MQTT broker')
+        logging.warning(f'No MQTT broker available, continuing without it (not running on Pi): {exc}')
 
     # loading screen
     for i in range(40):
@@ -327,9 +361,9 @@ def run_display(offline=0):
 
                 if 0 <= finger[1] <= 100:
                     if 700 <= finger[0]:
-                        screen_mode = (screen_mode + 1) % 7
+                        screen_mode = (screen_mode + 1) % 8
                     elif finger[0] <= 100:
-                        screen_mode = (screen_mode - 1) % 7
+                        screen_mode = (screen_mode - 1) % 8
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
@@ -369,7 +403,7 @@ def run_display(offline=0):
                                 pb_count = 0
 
 
-                elif screen_mode == 2:
+                elif screen_mode == 2 and split_count > 0:
                     if 300 <= finger[1] <= 360:
                         if 60 <= finger[0] <= 240:
                             current_split = (current_split - 1) % split_count
@@ -463,7 +497,7 @@ def run_display(offline=0):
                     img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
-                img = font1.render(engine_mode, True, engine_mode_dict.get(engine_mode, cfont0))
+                img = font1.render(str(int(data1[idx_gear])), True, cfont0)
                 screen.blit(img, (off1 + 665, offtop0 + 80))
 
                 img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
@@ -492,7 +526,7 @@ def run_display(offline=0):
                     img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
-                img = font1.render(engine_mode, True, engine_mode_dict.get(engine_mode, cfont0))
+                img = font1.render(str(int(data1[idx_gear])), True, cfont0)
                 screen.blit(img, (off1 + 665, offtop0 + 80))
 
                 img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
@@ -548,7 +582,8 @@ def run_display(offline=0):
         elif screen_mode == 2:
             screen.blit(screen_background_3, (0, 0))
 
-            img = font3.render(split_dict[current_split][0], True, (255,255,255))
+            split_label = split_dict[current_split][0] if current_split in split_dict else 'no splits'
+            img = font3.render(split_label, True, (255,255,255))
             screen.blit(img, (140, 100))
 
             pygame.draw.rect(screen, (200, 200, 200), pygame.Rect(60, 300, 180, 60))
@@ -623,6 +658,50 @@ def run_display(offline=0):
             if proc_status:
                 img = font3.render(proc_status, True, (255, 255, 0))
                 screen.blit(img, (20, 444))
+
+        elif screen_mode == 7:
+            screen.fill((40, 40, 40))
+            row_labels = [
+                ['LON', 'LAT', 'SATS', 'RTK'],
+                ['PYRO_FC', 'PYRO_FR', 'PYRO_FL', ''],
+                ['PYRO_RC', 'PYRO_RR', 'PYRO_RL', ''],
+            ]
+            for row, labels in enumerate(row_labels):
+                for col, label in enumerate(labels):
+                    draw_grid_cell(row, col, label, width1, height1)
+
+            # row 1: GPS - lon, lat, sat count, rtk flag
+            img = font_coord.render("%.5f" % data1[idx_gps_lon], True, cfont1)
+            screen.blit(img, (off1, offtop + off1 + 25))
+
+            img = font_coord.render("%.5f" % data1[idx_gps_lat], True, cfont1)
+            screen.blit(img, (off1 + width1, offtop + off1 + 25))
+
+            img = font2.render(str(int(data1[idx_gps_sats])), True, cfont1)
+            screen.blit(img, (off1 + 2 * width1, offtop + off1))
+
+            img = font2.render(str(int(data1[idx_gps_rtk])), True, cfont1)
+            screen.blit(img, (off1 + 3 * width1, offtop + off1))
+
+            # row 2: front pyrometers
+            img = font2.render("%.1f" % data1[idx_pyro_fc], True, cfont1)
+            screen.blit(img, (off1, offtop + off1 + height1))
+
+            img = font2.render("%.1f" % data1[idx_pyro_fr], True, cfont1)
+            screen.blit(img, (off1 + width1, offtop + off1 + height1))
+
+            img = font2.render("%.1f" % data1[idx_pyro_fl], True, cfont1)
+            screen.blit(img, (off1 + 2 * width1, offtop + off1 + height1))
+
+            # row 3: rear pyrometers
+            img = font2.render("%.1f" % data1[idx_pyro_rc], True, cfont1)
+            screen.blit(img, (off1, offtop + off1 + 2 * height1))
+
+            img = font2.render("%.1f" % data1[idx_pyro_rr], True, cfont1)
+            screen.blit(img, (off1 + width1, offtop + off1 + 2 * height1))
+
+            img = font2.render("%.1f" % data1[idx_pyro_rl], True, cfont1)
+            screen.blit(img, (off1 + 2 * width1, offtop + off1 + 2 * height1))
 
         pygame.display.flip()
         fpsClock.tick(FPS)

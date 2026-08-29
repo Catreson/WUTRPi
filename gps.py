@@ -182,6 +182,10 @@ class GPS:
         self.cm.save('gps_hdop', self.hdop)
         self.cm.save('gps_rtk', self.rtk_flag)
         self.cm.save('rtk_flag', self.rtk_flag)
+        try:
+            self.cm.save('gps_sats', int(fields[7]))
+        except (ValueError, IndexError):
+            pass
 
     def _handle_sentence(self, raw):
         try:

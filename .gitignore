@@ -2,3 +2,7 @@
 settings.yaml
 credentials.json
 deploy/ntrip_credentials.sh
+venv
+__pycache__
+.idea
+.vscode
