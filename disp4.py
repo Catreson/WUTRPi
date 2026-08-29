@@ -171,21 +171,25 @@ def toggle_proc_disabled(proc_name):
         logging.warning(f'Failed to toggle disable flag for {proc_name}: {exc}')
 
 
-def run_export():
+def start_export():
+    """Launch rclone in the background instead of blocking the render loop - returns
+    (process, error). error is set (and process is None) only if rclone couldn't even start."""
     try:
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ['rclone', 'copy', EXPORT_DIR, RCLONE_REMOTE, '--progress'],
-            capture_output=True, text=True, timeout=300)
-        if result.returncode != 0:
-            logging.warning(f'rclone export failed: stdout={result.stdout!r} stderr={result.stderr!r}')
-            return f'Export failed: {result.stderr.strip()[:60]} (see main_log.txt)'
-        return 'Exported OK'
-    except FileNotFoundError:
-        return 'rclone not installed'
-    except subprocess.TimeoutExpired:
-        return 'Export timed out'
-    except Exception as exc:
-        return f'Export error: {exc}'[:80]
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        return proc, None
+    except OSError as exc:
+        return None, f'Export error: {exc}'[:80]
+
+
+def poll_export(proc):
+    """Call once export_proc.poll() is not None - returns the final status string."""
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        logging.warning(f'rclone export failed: stdout={stdout!r} stderr={stderr!r}')
+        return f'Export failed: {stderr.strip()[:60]} (see main_log.txt)'
+    return 'Exported OK'
 
 
 def run_display(offline=0):
@@ -232,6 +236,7 @@ def run_display(offline=0):
     export_count = 0
     update_status = ''
     export_status = ''
+    export_proc = None
     proc_status = ''
     proc_action_counts = defaultdict(int)
     commit_hash = _git_commit_hash()
@@ -376,6 +381,10 @@ def run_display(offline=0):
         engine_mode = 'A'
         race_mode = 0
 
+        if export_proc is not None and export_proc.poll() is not None:
+            export_status = poll_export(export_proc)
+            export_proc = None
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -480,7 +489,11 @@ def run_display(offline=0):
                     if 100 <= finger[0] <= 700 and 150 <= finger[1] <= 330:
                         export_count = export_count + 1
                         if export_count > 5:
-                            export_status = run_export()
+                            if export_proc is not None:
+                                export_status = 'Export already running'
+                            else:
+                                export_proc, start_error = start_export()
+                                export_status = start_error if start_error else 'Exporting...'
                             export_count = 0
 
                 elif screen_mode == 6:
