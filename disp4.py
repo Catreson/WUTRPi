@@ -7,6 +7,7 @@ import logging
 import sys
 import shutil
 import subprocess
+import threading
 
 IS_PI = sys.platform.startswith('linux')
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -173,22 +174,37 @@ def toggle_proc_disabled(proc_name):
 
 def start_export():
     """Launch rclone in the background instead of blocking the render loop - returns
-    (process, error). error is set (and process is None) only if rclone couldn't even start."""
+    (process, progress, error). error is set (process/progress None) only if rclone
+    couldn't even start. progress['line'] is kept updated with the latest output line
+    by a background thread, so the pipe never fills up and blocks rclone itself."""
     try:
         proc = subprocess.Popen(
-            ['rclone', 'copy', EXPORT_DIR, RCLONE_REMOTE, '--progress'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return proc, None
+            ['rclone', 'copy', EXPORT_DIR, RCLONE_REMOTE, '--progress', '--stats=1s'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
     except OSError as exc:
-        return None, f'Export error: {exc}'[:80]
+        return None, None, f'Export error: {exc}'[:80]
+
+    progress = {'line': ''}
+
+    def _drain():
+        try:
+            for line in proc.stdout:
+                line = line.strip()
+                if line:
+                    progress['line'] = line
+        except Exception:
+            pass
+
+    threading.Thread(target=_drain, daemon=True).start()
+    return proc, progress, None
 
 
-def poll_export(proc):
+def poll_export(proc, progress):
     """Call once export_proc.poll() is not None - returns the final status string."""
-    stdout, stderr = proc.communicate()
     if proc.returncode != 0:
-        logging.warning(f'rclone export failed: stdout={stdout!r} stderr={stderr!r}')
-        return f'Export failed: {stderr.strip()[:60]} (see main_log.txt)'
+        last_line = progress.get('line', '')
+        logging.warning(f'rclone export failed (exit {proc.returncode}): last line: {last_line!r}')
+        return f'Export failed: {last_line[:60]} (see main_log.txt)'
     return 'Exported OK'
 
 
@@ -237,6 +253,7 @@ def run_display(offline=0):
     update_status = ''
     export_status = ''
     export_proc = None
+    export_progress = None
     proc_status = ''
     proc_action_counts = defaultdict(int)
     commit_hash = _git_commit_hash()
@@ -381,9 +398,13 @@ def run_display(offline=0):
         engine_mode = 'A'
         race_mode = 0
 
-        if export_proc is not None and export_proc.poll() is not None:
-            export_status = poll_export(export_proc)
-            export_proc = None
+        if export_proc is not None:
+            if export_proc.poll() is not None:
+                export_status = poll_export(export_proc, export_progress)
+                export_proc = None
+                export_progress = None
+            elif export_progress['line']:
+                export_status = export_progress['line']
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -492,7 +513,7 @@ def run_display(offline=0):
                             if export_proc is not None:
                                 export_status = 'Export already running'
                             else:
-                                export_proc, start_error = start_export()
+                                export_proc, export_progress, start_error = start_export()
                                 export_status = start_error if start_error else 'Exporting...'
                             export_count = 0
 
@@ -678,7 +699,7 @@ def run_display(offline=0):
             screen.blit(img, (245, 220))
 
             if export_status:
-                img = font3.render(export_status, True, (255, 255, 0))
+                img = font_label.render(export_status, True, (255, 255, 0))
                 screen.blit(img, (20, 20))
 
         elif screen_mode == 6:
