@@ -89,6 +89,9 @@ if __name__ == "__main__":
 
     P = []
     for proces_name in proces_dict:
+        if os.path.exists(f'{DISABLE_FLAG_PREFIX}{proces_name}'):
+            logging.warning(f'{proces_name} disabled, not starting')
+            continue
         try:
             p1 = Process(target = proces_dict[proces_name], name = proces_name)
             p1.start()
