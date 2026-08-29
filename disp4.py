@@ -497,7 +497,11 @@ def run_display(offline=0):
                     img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
-                img = font1.render(str(int(data1[idx_gear])), True, cfont0)
+                gear_val = int(data1[idx_gear])
+                if gear_val == 0:
+                    img = font1.render('N', True, (0, 220, 0))
+                else:
+                    img = font1.render(str(gear_val), True, (0, 220, 220))
                 screen.blit(img, (off1 + 665, offtop0 + 80))
 
                 img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
@@ -526,7 +530,11 @@ def run_display(offline=0):
                     img = font3.render("RTK", True, rtk_flag) # rtk indicator
                 screen.blit(img, (off1 + 665, offtop0 + 245))
 
-                img = font1.render(str(int(data1[idx_gear])), True, cfont0)
+                gear_val = int(data1[idx_gear])
+                if gear_val == 0:
+                    img = font1.render('N', True, (0, 220, 0))
+                else:
+                    img = font1.render(str(gear_val), True, (0, 220, 220))
                 screen.blit(img, (off1 + 665, offtop0 + 80))
 
                 img = font2.render("%.0f" %data1[4], True, cfont0) # h2o temp
