@@ -20,7 +20,8 @@ DISABLE_FLAG_PREFIX = '/tmp/wutrpi_disable_'
 SUSP_CORRECTION_CODES = {'susp_f': 1, 'susp_r': 2, 'p_brake': 3, 'steer_angle': 4}
 RCLONE_REMOTE = 'gdrive2:WUTRPi-logs'
 EXPORT_DIR = '/home/catreson/dane_esp_write/'
-CONTROLLABLE_PROCS = ['ecu_proc', 'susp_proc', 'pyro_proc', 'gps_proc', 'leds_proc', 'logger_proc']
+SENSOR_PROCS = ['ecu_proc', 'susp_proc', 'pyro_proc', 'gps_proc', 'leds_proc']
+LOGGING_PROCS = ['logger_proc', 'mqtt_archive_proc']
 
 
 def _git_remote_url():
@@ -137,6 +138,8 @@ def run_update():
 
 
 def run_close():
+    for proc_name in LOGGING_PROCS:
+        set_proc_disabled(proc_name, True)
     try:
         with open(DISPLAY_STOP_FLAG, 'w') as f:
             f.write('stopped')
@@ -170,6 +173,18 @@ def toggle_proc_disabled(proc_name):
                 f.write('disabled')
     except OSError as exc:
         logging.warning(f'Failed to toggle disable flag for {proc_name}: {exc}')
+
+
+def set_proc_disabled(proc_name, disabled):
+    flag_path = f'{DISABLE_FLAG_PREFIX}{proc_name}'
+    try:
+        if disabled:
+            with open(flag_path, 'w') as f:
+                f.write('disabled')
+        elif os.path.exists(flag_path):
+            os.remove(flag_path)
+    except OSError as exc:
+        logging.warning(f'Failed to set disable flag for {proc_name}: {exc}')
 
 
 def start_export():
@@ -254,6 +269,9 @@ def run_display(offline=0):
     export_status = ''
     export_proc = None
     export_progress = None
+    export_phase = None
+    export_pause_until = 0
+    export_prior_disabled = {}
     proc_status = ''
     proc_action_counts = defaultdict(int)
     commit_hash = _git_commit_hash()
@@ -299,6 +317,58 @@ def run_display(offline=0):
             text_color = tuple(int(c * 0.55) for c in color)
             img = font_label.render(label, True, text_color)
             screen.blit(img, (rect.x + 10, rect.y + 10))
+
+    def draw_proc_screen(title, proc_list, status_text):
+        screen.fill((20, 20, 20))
+        img = font3.render(title, True, (200, 200, 200))
+        screen.blit(img, (20, 15))
+
+        for i, proc_name in enumerate(proc_list):
+            row_y = 104 + i * 48
+            disabled = is_proc_disabled(proc_name)
+
+            img = font_label.render(proc_name.replace('_proc', '').upper(), True, (255, 255, 255))
+            screen.blit(img, (20, row_y + 4))
+
+            status_col = (140, 140, 140) if disabled else (0, 200, 0)
+            img = font_label.render('DISABLED' if disabled else 'RUNNING', True, status_col)
+            screen.blit(img, (170, row_y + 4))
+
+            pygame.draw.rect(screen, (60, 60, 90), pygame.Rect(400, row_y, 150, 40))
+            img = font_label.render('RESTART', True, (255, 255, 255))
+            screen.blit(img, (425, row_y + 4))
+
+            toggle_col = (30, 90, 30) if disabled else (90, 30, 30)
+            pygame.draw.rect(screen, toggle_col, pygame.Rect(580, row_y, 180, 40))
+            img = font_label.render('ENABLE' if disabled else 'DISABLE', True, (255, 255, 255))
+            screen.blit(img, (625, row_y + 4))
+
+        if status_text:
+            img = font_label.render(status_text, True, (255, 255, 0))
+            screen.blit(img, (20, 444))
+
+    def handle_proc_screen_touch(proc_list, finger):
+        for i, proc_name in enumerate(proc_list):
+            row_y = 104 + i * 48
+            if not (row_y <= finger[1] <= row_y + 40):
+                continue
+            if 400 <= finger[0] <= 550:
+                key = ('restart', proc_name)
+                proc_action_counts[key] += 1
+                if proc_action_counts[key] > 5:
+                    request_restart(proc_name)
+                    proc_action_counts[key] = 0
+                    return f'Restarted {proc_name}'
+            elif 580 <= finger[0] <= 760:
+                key = ('toggle', proc_name)
+                proc_action_counts[key] += 1
+                if proc_action_counts[key] > 5:
+                    toggle_proc_disabled(proc_name)
+                    verb = 'Disabled' if is_proc_disabled(proc_name) else 'Enabled'
+                    proc_action_counts[key] = 0
+                    return f'{verb} {proc_name}'
+            break
+        return None
 
     FPS = 10
     fpsClock = pygame.time.Clock()
@@ -398,11 +468,24 @@ def run_display(offline=0):
         engine_mode = 'A'
         race_mode = 0
 
+        if export_phase == 'pausing' and time.time() >= export_pause_until:
+            export_proc, export_progress, start_error = start_export()
+            if start_error:
+                export_status = start_error
+                export_phase = None
+                for p in LOGGING_PROCS:
+                    set_proc_disabled(p, export_prior_disabled.get(p, False))
+            else:
+                export_phase = 'running'
+
         if export_proc is not None:
             if export_proc.poll() is not None:
                 export_status = poll_export(export_proc, export_progress)
                 export_proc = None
                 export_progress = None
+                export_phase = None
+                for p in LOGGING_PROCS:
+                    set_proc_disabled(p, export_prior_disabled.get(p, False))
             elif export_progress['line']:
                 export_status = export_progress['line']
 
@@ -417,9 +500,9 @@ def run_display(offline=0):
 
                 if 0 <= finger[1] <= 100:
                     if 700 <= finger[0]:
-                        screen_mode = (screen_mode + 1) % 8
+                        screen_mode = (screen_mode + 1) % 9
                     elif finger[0] <= 100:
-                        screen_mode = (screen_mode - 1) % 8
+                        screen_mode = (screen_mode - 1) % 9
 
                 if screen_mode == 0 and 0 < finger[0] < 160 and 320 < finger[1] < 480:
                     inversion = inversion * (-1)
@@ -510,34 +593,26 @@ def run_display(offline=0):
                     if 100 <= finger[0] <= 700 and 150 <= finger[1] <= 330:
                         export_count = export_count + 1
                         if export_count > 5:
-                            if export_proc is not None:
+                            if export_proc is not None or export_phase is not None:
                                 export_status = 'Export already running'
                             else:
-                                export_proc, export_progress, start_error = start_export()
-                                export_status = start_error if start_error else 'Exporting...'
+                                export_prior_disabled = {p: is_proc_disabled(p) for p in LOGGING_PROCS}
+                                for p in LOGGING_PROCS:
+                                    set_proc_disabled(p, True)
+                                export_phase = 'pausing'
+                                export_pause_until = time.time() + 11
+                                export_status = 'Pausing logging...'
                             export_count = 0
 
                 elif screen_mode == 6:
-                    for i, proc_name in enumerate(CONTROLLABLE_PROCS):
-                        row_y = 104 + i * 48
-                        if not (row_y <= finger[1] <= row_y + 40):
-                            continue
-                        if 400 <= finger[0] <= 550:
-                            key = ('restart', proc_name)
-                            proc_action_counts[key] += 1
-                            if proc_action_counts[key] > 5:
-                                request_restart(proc_name)
-                                proc_status = f'Restarted {proc_name}'
-                                proc_action_counts[key] = 0
-                        elif 580 <= finger[0] <= 760:
-                            key = ('toggle', proc_name)
-                            proc_action_counts[key] += 1
-                            if proc_action_counts[key] > 5:
-                                toggle_proc_disabled(proc_name)
-                                verb = 'Disabled' if is_proc_disabled(proc_name) else 'Enabled'
-                                proc_status = f'{verb} {proc_name}'
-                                proc_action_counts[key] = 0
-                        break
+                    new_status = handle_proc_screen_touch(SENSOR_PROCS, finger)
+                    if new_status:
+                        proc_status = new_status
+
+                elif screen_mode == 7:
+                    new_status = handle_proc_screen_touch(LOGGING_PROCS, finger)
+                    if new_status:
+                        proc_status = new_status
 
         if screen_mode == 0:
             if race_mode == 0:
@@ -703,35 +778,9 @@ def run_display(offline=0):
                 screen.blit(img, (20, 20))
 
         elif screen_mode == 6:
-            screen.fill((20, 20, 20))
-            img = font3.render('PROCESSES', True, (200, 200, 200))
-            screen.blit(img, (20, 15))
+            draw_proc_screen('PROCESSES', SENSOR_PROCS, proc_status)
 
-            for i, proc_name in enumerate(CONTROLLABLE_PROCS):
-                row_y = 104 + i * 48
-                disabled = is_proc_disabled(proc_name)
-
-                img = font3.render(proc_name.replace('_proc', '').upper(), True, (255, 255, 255))
-                screen.blit(img, (20, row_y + 8))
-
-                status_col = (140, 140, 140) if disabled else (0, 200, 0)
-                img = font3.render('DISABLED' if disabled else 'RUNNING', True, status_col)
-                screen.blit(img, (170, row_y + 8))
-
-                pygame.draw.rect(screen, (60, 60, 90), pygame.Rect(400, row_y, 150, 40))
-                img = font3.render('RESTART', True, (255, 255, 255))
-                screen.blit(img, (415, row_y + 8))
-
-                toggle_col = (30, 90, 30) if disabled else (90, 30, 30)
-                pygame.draw.rect(screen, toggle_col, pygame.Rect(580, row_y, 180, 40))
-                img = font3.render('ENABLE' if disabled else 'DISABLE', True, (255, 255, 255))
-                screen.blit(img, (605, row_y + 8))
-
-            if proc_status:
-                img = font3.render(proc_status, True, (255, 255, 0))
-                screen.blit(img, (20, 444))
-
-        elif screen_mode == 7:
+        elif screen_mode == 8:
             screen.fill((40, 40, 40))
             row_labels = [
                 ['LON', 'LAT', 'SATS', 'RTK'],
@@ -774,6 +823,9 @@ def run_display(offline=0):
 
             img = font2.render("%.1f" % data1[idx_pyro_rl], True, cfont1)
             screen.blit(img, (off1 + 2 * width1, offtop + off1 + 2 * height1))
+
+        elif screen_mode == 7:
+            draw_proc_screen('LOGGING', LOGGING_PROCS, proc_status)
 
         pygame.display.flip()
         fpsClock.tick(FPS)

@@ -11,7 +11,7 @@ class LOGGER:
         self.cm = SHM()
         columns = sorted(self.cm.names_dict.items(), key=lambda kv: kv[1])
         self.columns = [name for name, idx in columns]
-        filename = f'{self.write_path}log_{round(time.time())}.csv'
+        filename = f'{self.write_path}log_{time.strftime("%Y%m%d%H%M%S", time.gmtime())}.csv'
         self.file = open(filename, 'w', newline='')
         self.writer = csv.writer(self.file)
         self.writer.writerow(['timestamp'] + self.columns)

@@ -68,6 +68,10 @@ def logger_thread():
     logger = LOGGER()
     logger_trigger = READ_TRIGGER(frequency = 200, func = logger.log_row)
 
+def mqtt_archive_thread():
+    from mqtt_archive import run_mqtt_archive
+    run_mqtt_archive()
+
 
 proces_dict = {
   'ecu_proc': ECU_thread,
@@ -77,6 +81,7 @@ proces_dict = {
   'gps_proc': gps_thread,
   'leds_proc': leds_thread,
   'logger_proc': logger_thread,
+  'mqtt_archive_proc': mqtt_archive_thread,
   'display_proc': display_thread}
 
 if __name__ == "__main__":

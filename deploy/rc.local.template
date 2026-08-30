@@ -39,7 +39,9 @@ su catreson -c 'NTRIP_URL="ntrip://${NTRIP_USER}:${NTRIP_PASS}@system.asgeupos.p
 
 su catreson -c 'python3 /home/catreson/WSRT/PiProjects/SpeedSensor/rpm &> /home/catreson/logs/rpm_log.txt' &
 
-su catreson -c 'mosquitto_sub -t bike/sensor/# &> /home/catreson/dane_esp_write/rad_gps_input_$(date -u +\%Y\%m\%d\%H\%M\%S).csv' &
+# mosquitto_sub archive is now supervised by main.py (mqtt_archive_proc) - can be
+# paused/resumed from the touchscreen PROCESSES screen, or automatically during EXPORT
+#su catreson -c 'mosquitto_sub -t bike/sensor/# &> /home/catreson/dane_esp_write/rad_gps_input_$(date -u +\%Y\%m\%d\%H\%M\%S).csv' &
 
 su catreson -c 'sudo docker run -v /home/catreson/dane_esp_read:/esp-project/home/files -v /home/catreson/dane_esp_write:/esp-project/output iotincloudregistry.azurecr.io/rpi/esprace:timestamp' &
 
